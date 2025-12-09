@@ -1,2 +1,2 @@
-// Utility functions
-// Example: export * from './format';
+// 工具函数
+// 示例: export * from './format';

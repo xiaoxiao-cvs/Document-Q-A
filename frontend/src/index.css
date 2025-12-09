@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Colors */
+  /* 颜色 */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -25,22 +25,39 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Radius */
+  /* 苹果设计系统颜色 */
+  --color-apple-blue: var(--apple-blue);
+  --color-apple-gray: var(--apple-gray);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+
+  /* 圆角 - 苹果风格圆角矩形 */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+
+  /* 苹果设计阴影 */
+  --shadow-apple-sm: var(--apple-shadow-sm);
+  --shadow-apple-md: var(--apple-shadow-md);
+  --shadow-apple-lg: var(--apple-shadow-lg);
+  --shadow-apple-xl: var(--apple-shadow-xl);
+  
+  /* 苹果设计模糊 */
+  --blur-apple: var(--apple-blur);
 }
 
 :root {
-  --background: oklch(100% 0 0);
+  --background: oklch(98.5% 0.002 247.84);
   --foreground: oklch(14.1% 0.005 285.82);
   --card: oklch(100% 0 0);
   --card-foreground: oklch(14.1% 0.005 285.82);
   --popover: oklch(100% 0 0);
   --popover-foreground: oklch(14.1% 0.005 285.82);
-  --primary: oklch(21.1% 0.006 285.89);
-  --primary-foreground: oklch(98.5% 0.002 247.84);
+  --primary: oklch(54.9% 0.238 264.18);
+  --primary-foreground: oklch(100% 0 0);
   --secondary: oklch(96.7% 0.001 286.38);
   --secondary-foreground: oklch(21.1% 0.006 285.89);
   --muted: oklch(96.7% 0.001 286.38);
@@ -51,25 +68,36 @@
   --destructive-foreground: oklch(98.5% 0.002 247.84);
   --border: oklch(91.9% 0.004 286.32);
   --input: oklch(91.9% 0.004 286.32);
-  --ring: oklch(21.1% 0.006 285.89);
-  --radius: 0.625rem;
+  --ring: oklch(54.9% 0.238 264.18);
+  --radius: 1rem;
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
   --success: var(--color-emerald-500);
   --success-foreground: var(--color-emerald-700);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
+
+  /* 苹果设计系统 */
+  --apple-blue: oklch(54.9% 0.238 264.18);
+  --apple-gray: oklch(55.2% 0.015 285.94);
+  --glass: oklch(100% 0 0 / 72%);
+  --glass-border: oklch(100% 0 0 / 24%);
+  --apple-shadow-sm: 0 1px 2px oklch(0% 0 0 / 4%), 0 1px 3px oklch(0% 0 0 / 6%);
+  --apple-shadow-md: 0 4px 6px oklch(0% 0 0 / 4%), 0 2px 4px oklch(0% 0 0 / 6%);
+  --apple-shadow-lg: 0 10px 15px oklch(0% 0 0 / 6%), 0 4px 6px oklch(0% 0 0 / 4%);
+  --apple-shadow-xl: 0 20px 25px oklch(0% 0 0 / 8%), 0 8px 10px oklch(0% 0 0 / 4%);
+  --apple-blur: 20px;
 }
 
 .dark {
-  --background: oklch(14.1% 0.005 285.82);
+  --background: oklch(12% 0.005 285.82);
   --foreground: oklch(98.5% 0.002 247.84);
-  --card: oklch(14.1% 0.005 285.82);
+  --card: oklch(18% 0.006 286.03);
   --card-foreground: oklch(98.5% 0.002 247.84);
-  --popover: oklch(14.1% 0.005 285.82);
+  --popover: oklch(18% 0.006 286.03);
   --popover-foreground: oklch(98.5% 0.002 247.84);
-  --primary: oklch(98.5% 0.002 247.84);
-  --primary-foreground: oklch(21.1% 0.006 285.89);
+  --primary: oklch(62% 0.22 264.18);
+  --primary-foreground: oklch(100% 0 0);
   --secondary: oklch(27.4% 0.006 286.03);
   --secondary-foreground: oklch(98.5% 0.002 247.84);
   --muted: oklch(27.4% 0.006 286.03);
@@ -80,13 +108,23 @@
   --destructive-foreground: oklch(98.5% 0.002 247.84);
   --border: oklch(27.4% 0.006 286.03);
   --input: oklch(27.4% 0.006 286.03);
-  --ring: oklch(44.1% 0.012 286);
+  --ring: oklch(62% 0.22 264.18);
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-400);
   --success: var(--color-emerald-500);
   --success-foreground: var(--color-emerald-400);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-400);
+
+  /* 苹果设计系统 - 深色模式 */
+  --apple-blue: oklch(62% 0.22 264.18);
+  --apple-gray: oklch(70.5% 0.012 286.07);
+  --glass: oklch(20% 0.006 286.03 / 72%);
+  --glass-border: oklch(100% 0 0 / 12%);
+  --apple-shadow-sm: 0 1px 2px oklch(0% 0 0 / 12%), 0 1px 3px oklch(0% 0 0 / 16%);
+  --apple-shadow-md: 0 4px 6px oklch(0% 0 0 / 16%), 0 2px 4px oklch(0% 0 0 / 12%);
+  --apple-shadow-lg: 0 10px 15px oklch(0% 0 0 / 20%), 0 4px 6px oklch(0% 0 0 / 12%);
+  --apple-shadow-xl: 0 20px 25px oklch(0% 0 0 / 24%), 0 8px 10px oklch(0% 0 0 / 12%);
 }
 
 * {
@@ -96,7 +134,230 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+}
+
+/* 苹果设计 - 平滑过渡 */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 苹果设计 - 毛玻璃效果工具类 */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(var(--apple-blur));
+  -webkit-backdrop-filter: blur(var(--apple-blur));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-subtle {
+  background: oklch(100% 0 0 / 50%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .glass-subtle {
+  background: oklch(20% 0.006 286.03 / 50%);
+}
+
+/* 苹果设计 - 阴影工具类 */
+.shadow-apple-sm {
+  box-shadow: var(--apple-shadow-sm);
+}
+
+.shadow-apple-md {
+  box-shadow: var(--apple-shadow-md);
+}
+
+.shadow-apple-lg {
+  box-shadow: var(--apple-shadow-lg);
+}
+
+.shadow-apple-xl {
+  box-shadow: var(--apple-shadow-xl);
+}
+
+/* 苹果设计 - 动画关键帧 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px oklch(54.9% 0.238 264.18 / 30%);
+  }
+  50% {
+    box-shadow: 0 0 40px oklch(54.9% 0.238 264.18 / 50%);
+  }
+}
+
+/* 苹果设计 - 动画工具类 */
+.animate-fade-in {
+  animation: fade-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(100% 0 0 / 20%) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* 苹果设计 - 悬停效果 */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--apple-shadow-lg);
+}
+
+.hover-scale {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.hover-scale:active {
+  transform: scale(0.98);
+}
+
+/* 苹果设计 - 按压效果 */
+.press-effect {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.press-effect:active {
+  transform: scale(0.97);
+}
+
+/* 苹果设计 - 圆角矩形边框圆角 */
+.squircle {
+  border-radius: 22% / 22%;
+}
+
+.squircle-sm {
+  border-radius: 18% / 18%;
+}
+
+.squircle-lg {
+  border-radius: 26% / 26%;
 }
 
 @theme inline {

@@ -1,2 +1,2 @@
-// API services
-// Example: export * from './chatService';
+// API 服务
+// 示例: export * from './chatService';
