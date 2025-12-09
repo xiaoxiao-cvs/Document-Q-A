@@ -1,2 +1,2 @@
-// Zustand stores
-// Example: export * from './chatStore';
+// Zustand 状态库
+// 示例: export * from './chatStore';
