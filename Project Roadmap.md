@@ -3,42 +3,52 @@
 > **目标**：构建一个仿 Gemini 界面、具备左右分屏、支持原文精准高亮定位的 RAG 文档问答系统。
 > **技术栈**：Python (FastAPI + PyMuPDF + LangChain) + React (Vite + Shadcn/UI + react-pdf)。
 
-## 阶段一：环境搭建与基础架构 (Infrastructure)
+## 阶段一：环境搭建与基础架构 (Infrastructure) ✅ 已完成
 此阶段目标是跑通 "Hello World"，确保前后端环境隔离且可用。
 
-- [ ] **1.1 项目初始化**
-    - [ ] 创建 Git 仓库，建立目录结构（建议 `backend/` 和 `frontend/` 分离）。
-    - [ ] 编写 `.gitignore` (忽略 `venv`, `node_modules`, `.env`, `__pycache__`)。
-- [ ] **1.2 后端环境配置 (Python)**
-    - [ ] 创建虚拟环境 (`python -m venv venv`)。
-    - [ ] 安装核心依赖：`fastapi`, `uvicorn`, `langchain`, `google-generativeai` (或 `openai`), `pymupdf` (fitz), `chromadb`。
-    - [ ] 配置 `.env` 文件（存放 API Key）。
-- [ ] **1.3 前端环境配置 (React)**
-    - [ ] 使用 Vite 初始化项目 (`npm create vite@latest`)。
-    - [ ] 安装 Tailwind CSS。
-    - [ ] 初始化 **Shadcn/UI** (`npx shadcn-ui@latest init`)。
-    - [ ] 安装关键库：`react-pdf`, `zustand` (状态管理), `axios`, `react-markdown`, `lucide-react` (图标)。
+- [x] **1.1 项目初始化**
+    - [x] 创建 Git 仓库，建立目录结构（建议 `backend/` 和 `frontend/` 分离）。
+    - [x] 编写 `.gitignore` (忽略 `venv`, `node_modules`, `.env`, `__pycache__`)。
+- [x] **1.2 后端环境配置 (Python)**
+    - [x] 创建虚拟环境 (`python -m venv venv`)。
+    - [x] 安装核心依赖：`fastapi`, `uvicorn`, `langchain`, `google-generativeai` (或 `openai`), `pymupdf` (fitz), `chromadb`。
+    - [x] 配置 `.env` 文件（存放 API Key）。
+- [x] **1.3 前端环境配置 (React)**
+    - [x] 使用 Vite 初始化项目 (`npm create vite@latest`)。
+    - [x] 安装 Tailwind CSS。
+    - [x] 初始化 **Shadcn/UI** (`npx shadcn-ui@latest init`)。
+    - [x] 安装关键库：`react-pdf`, `zustand` (状态管理), `axios`, `react-markdown`, `lucide-react` (图标)。
 
 ---
 
 ## 阶段二：后端核心开发 - PDF 解析与 RAG 引擎 (Backend Core)
 此阶段不涉及界面，专注于 API 接口和数据处理，建议使用 Postman/Swagger 测试。
 
-- [ ] **2.1 PDF 解析模块 (最关键步骤)**
-    - [ ] 编写 PDFLoader 类，使用 `fitz (PyMuPDF)` 打开文件。
-    - [ ] **实现“带坐标提取”功能**：不仅提取文本，还要提取每个文本块的 `bbox` (bounding box: x0, y0, x1, y1) 和 `page_number`。
-    - [ ] 数据清洗：去除页眉页脚噪音（可选）。
-- [ ] **2.2 向量数据库与检索**
-    - [ ] 文本切分 (Text Splitter)：设置合适的 Chunk Size (如 500 tokens)。
-    - [ ] **Metadata 注入**：确保每个 Chunk 存入向量库时，都带有 `{"page": 1, "bbox": [...]}` 这样的元数据。
-    - [ ] 集成 ChromaDB：实现文档的 Embedding 存储和相似度搜索。
-- [ ] **2.3 LLM 接入与问答逻辑**
-    - [ ] 接入 Google Gemini API (或其他免费 API)。
-    - [ ] 构建 Prompt 模板：`"基于以下上下文回答问题，并引用来源..."`。
-    - [ ] 实现简单的非流式问答接口进行测试。
-- [ ] **2.4 API 接口开发**
-    - [ ] `POST /api/upload`: 接收 PDF 文件，执行解析和向量化，返回 `file_id`。
-    - [ ] `POST /api/chat`: 接收 `question` 和 `file_id`，返回答案及来源元数据。
+- [x] **2.1 PDF 解析模块 (最关键步骤)**
+    - [x] 编写 PDFLoader 类，使用 `fitz (PyMuPDF)` 打开文件。
+    - [x] **实现"带坐标提取"功能**：不仅提取文本，还要提取每个文本块的 `bbox` (bounding box: x0, y0, x1, y1) 和 `page_number`。
+    - [x] 数据清洗：去除页眉页脚噪音（可选）。
+    - [x] 实现文件：`backend/app/services/pdf_parser.py`
+- [x] **2.2 向量数据库与检索**
+    - [x] 文本切分 (Text Splitter)：设置合适的 Chunk Size (如 500 tokens)。
+    - [x] **Metadata 注入**：确保每个 Chunk 存入向量库时，都带有 `{"page": 1, "bbox": [...]}` 这样的元数据。
+    - [x] 集成 ChromaDB：实现文档的 Embedding 存储和相似度搜索。
+    - [x] 实现文件：`backend/app/services/text_chunker.py`, `backend/app/services/vector_store.py`
+- [x] **2.3 LLM 接入与问答逻辑**
+    - [x] 接入 Google Gemini API (或其他免费 API)。
+    - [x] 构建 Prompt 模板：`"基于以下上下文回答问题，并引用来源..."`。
+    - [x] 实现简单的非流式问答接口进行测试。
+    - [x] 实现文件：`backend/app/services/llm_service.py`
+- [x] **2.4 API 接口开发**
+    - [x] `POST /api/documents/upload`: 接收 PDF 文件，执行解析和向量化，返回 `file_id`。
+    - [x] `POST /api/chat`: 接收 `question` 和 `file_id`，返回答案及来源元数据。
+    - [x] `POST /api/chat/stream`: 流式返回答案。
+    - [x] 实现文件：`backend/app/api/documents.py`, `backend/app/api/chat.py`
+- [x] **2.5 数据库设计 (SQLite)**
+    - [x] Document 模型：存储文档元数据和状态。
+    - [x] DocumentChunk 模型：存储文本块及其位置信息。
+    - [x] Conversation/Message 模型：存储对话历史。
+    - [x] 实现文件：`backend/app/core/models.py`, `backend/app/core/database.py`
 
 ---
 

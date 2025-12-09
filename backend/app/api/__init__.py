@@ -1,1 +1,4 @@
-# API Routes
+# API module exports
+from app.api.router import api_router, root_router
+
+__all__ = ["api_router", "root_router"]
