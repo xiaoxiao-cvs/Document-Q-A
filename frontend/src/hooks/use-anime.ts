@@ -14,22 +14,23 @@ export { animate, stagger, createTimeline, utils };
 /**
  * 苹果风格缓动函数
  * 基于 Apple 人机交互指南
+ * anime.js v4 语法
  */
 export const appleEasings = {
   // 标准缓动 - 平滑自然
-  standard: 'cubicBezier(0.4, 0, 0.2, 1)',
+  standard: 'outQuad',
   // 减速缓动 - 用于元素进入屏幕
-  decelerate: 'cubicBezier(0, 0, 0.2, 1)',
+  decelerate: 'outCubic',
   // 加速缓动 - 用于元素离开屏幕
-  accelerate: 'cubicBezier(0.4, 0, 1, 1)',
+  accelerate: 'inCubic',
   // 锐利缓动 - 用于快速、干脆的动画
-  sharp: 'cubicBezier(0.4, 0, 0.6, 1)',
-  // 弹簧效果
-  spring: 'spring(1, 80, 10, 0)',
+  sharp: 'inOutQuad',
+  // 弹簧效果 - anime.js v4 使用 spring() 函数
+  spring: 'outElastic(1, 0.5)',
   // 平滑弹性
-  elastic: 'easeOutElastic(1, 0.5)',
+  elastic: 'outElastic(1, 0.6)',
   // 轻柔弹跳
-  bounce: 'easeOutBounce',
+  bounce: 'outBounce',
 } as const;
 
 /**
@@ -165,8 +166,8 @@ export function useStaggerAnimation(
     if (items.length === 0) return null;
 
     return animate(items, {
-      opacity: [0, 1],
-      translateY: [20, 0],
+      opacity: { from: 0, to: 1 },
+      translateY: { from: 20, to: 0 },
       duration,
       ease,
       delay: stagger(delay, { from: fromDirection }),
@@ -193,8 +194,8 @@ export function useFadeIn(
     if (!ref.current) return;
 
     const animation = animate(ref.current, {
-      opacity: [0, 1],
-      translateY: [translateY, 0],
+      opacity: { from: 0, to: 1 },
+      translateY: { from: translateY, to: 0 },
       duration,
       delay,
       ease: appleEasings.decelerate,
@@ -316,8 +317,8 @@ export function animateValue(
 export const appleAnimations = {
   fadeIn: (target: string | Element, delay = 0) =>
     animate(target, {
-      opacity: [0, 1],
-      translateY: [10, 0],
+      opacity: { from: 0, to: 1 },
+      translateY: { from: 10, to: 0 },
       duration: appleDurations.normal,
       delay,
       ease: appleEasings.decelerate,
@@ -325,8 +326,8 @@ export const appleAnimations = {
 
   fadeOut: (target: string | Element, delay = 0) =>
     animate(target, {
-      opacity: [1, 0],
-      translateY: [0, -10],
+      opacity: { from: 1, to: 0 },
+      translateY: { from: 0, to: -10 },
       duration: appleDurations.fast,
       delay,
       ease: appleEasings.accelerate,
@@ -334,8 +335,8 @@ export const appleAnimations = {
 
   scaleIn: (target: string | Element, delay = 0) =>
     animate(target, {
-      opacity: [0, 1],
-      scale: [0.9, 1],
+      opacity: { from: 0, to: 1 },
+      scale: { from: 0.9, to: 1 },
       duration: appleDurations.normal,
       delay,
       ease: appleEasings.spring,
@@ -343,8 +344,8 @@ export const appleAnimations = {
 
   scaleOut: (target: string | Element, delay = 0) =>
     animate(target, {
-      opacity: [1, 0],
-      scale: [1, 0.9],
+      opacity: { from: 1, to: 0 },
+      scale: { from: 1, to: 0.9 },
       duration: appleDurations.fast,
       delay,
       ease: appleEasings.accelerate,
@@ -352,8 +353,8 @@ export const appleAnimations = {
 
   slideUp: (target: string | Element, delay = 0) =>
     animate(target, {
-      opacity: [0, 1],
-      translateY: [30, 0],
+      opacity: { from: 0, to: 1 },
+      translateY: { from: 30, to: 0 },
       duration: appleDurations.slow,
       delay,
       ease: appleEasings.decelerate,
@@ -361,8 +362,8 @@ export const appleAnimations = {
 
   slideDown: (target: string | Element, delay = 0) =>
     animate(target, {
-      opacity: [0, 1],
-      translateY: [-30, 0],
+      opacity: { from: 0, to: 1 },
+      translateY: { from: -30, to: 0 },
       duration: appleDurations.slow,
       delay,
       ease: appleEasings.decelerate,
@@ -405,8 +406,8 @@ export const appleAnimations = {
 
   staggerFadeIn: (targets: string | Element[] | NodeList, staggerDelay = 50) =>
     animate(targets, {
-      opacity: [0, 1],
-      translateY: [20, 0],
+      opacity: { from: 0, to: 1 },
+      translateY: { from: 20, to: 0 },
       duration: appleDurations.normal,
       delay: stagger(staggerDelay, { from: 'first' }),
       ease: appleEasings.decelerate,
