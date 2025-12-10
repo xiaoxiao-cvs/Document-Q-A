@@ -1,2 +1,4 @@
 // API 服务
-// 示例: export * from './chatService';
+export * from './api';
+export * from './documentService';
+export * from './chatService';

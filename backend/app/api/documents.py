@@ -3,9 +3,11 @@
 处理 PDF 文档的上传、检索和删除。
 """
 import logging
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -186,3 +188,45 @@ async def get_document_chunks(
     
     chunks = service.get_document_chunks(document_id, page=page)
     return chunks
+
+
+@router.get(
+    "/{document_id}/file",
+    responses={
+        404: {"model": ErrorResponse, "description": "未找到文档"},
+    },
+)
+async def get_document_file(
+    document_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    获取 PDF 文件用于预览。
+    
+    - **document_id**: 文档的 UUID
+    """
+    service = DocumentService(db)
+    document = service.get_document(document_id)
+    
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"未找到文档: {document_id}",
+        )
+    
+    file_path = Path(document.file_path)
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="文件不存在",
+        )
+    
+    return FileResponse(
+        path=file_path,
+        media_type="application/pdf",
+        filename=document.original_filename,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+    )
