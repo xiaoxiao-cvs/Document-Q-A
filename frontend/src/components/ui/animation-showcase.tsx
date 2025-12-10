@@ -130,9 +130,9 @@ function StaggerDemo() {
     // 交错动画
     setTimeout(() => {
       animate(items, {
-        opacity: [0, 1],
-        translateY: [30, 0],
-        scale: [0.8, 1],
+        opacity: { from: 0, to: 1 },
+        translateY: { from: 30, to: 0 },
+        scale: { from: 0.8, to: 1 },
         duration: appleDurations.normal,
         delay: stagger(80, { from: 'first' }),
         ease: appleEasings.spring,
@@ -206,7 +206,7 @@ export function AnimationShowcase() {
       description: '元素从透明渐变为可见',
       play: (target) => {
         animate(target, {
-          opacity: [0, 1],
+          opacity: { from: 0, to: 1 },
           duration: appleDurations.normal,
           ease: appleEasings.decelerate,
         });
@@ -217,8 +217,8 @@ export function AnimationShowcase() {
       description: '元素从小变大并显现',
       play: (target) => {
         animate(target, {
-          opacity: [0, 1],
-          scale: [0.5, 1],
+          opacity: { from: 0, to: 1 },
+          scale: { from: 0.5, to: 1 },
           duration: appleDurations.normal,
           ease: appleEasings.spring,
         });
@@ -229,8 +229,8 @@ export function AnimationShowcase() {
       description: '元素从下方滑入',
       play: (target) => {
         animate(target, {
-          opacity: [0, 1],
-          translateY: [50, 0],
+          opacity: { from: 0, to: 1 },
+          translateY: { from: 50, to: 0 },
           duration: appleDurations.slow,
           ease: appleEasings.decelerate,
         });

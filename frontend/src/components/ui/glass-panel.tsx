@@ -90,9 +90,9 @@ const GlassPanel = forwardRef<HTMLDivElement, GlassPanelProps>(
       if (!enableEnterAnimation || !panelRef.current) return;
 
       animate(panelRef.current, {
-        opacity: [0, 1],
-        scale: [0.95, 1],
-        translateY: [20, 0],
+        opacity: { from: 0, to: 1 },
+        scale: { from: 0.95, to: 1 },
+        translateY: { from: 20, to: 0 },
         duration: appleDurations.slow,
         ease: appleEasings.decelerate,
       });

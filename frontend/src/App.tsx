@@ -20,8 +20,8 @@ function App() {
     if (heroRef.current) {
       const heroElements = heroRef.current.querySelectorAll('[data-animate]');
       animate(heroElements, {
-        opacity: [0, 1],
-        translateY: [30, 0],
+        opacity: { from: 0, to: 1 },
+        translateY: { from: 30, to: 0 },
         duration: appleDurations.slow,
         delay: stagger(100, { from: 'first' }),
         ease: appleEasings.decelerate,
@@ -32,9 +32,9 @@ function App() {
     if (featuresRef.current) {
       const featureCards = featuresRef.current.querySelectorAll('[data-animate]');
       animate(featureCards, {
-        opacity: [0, 1],
-        translateY: [40, 0],
-        scale: [0.95, 1],
+        opacity: { from: 0, to: 1 },
+        translateY: { from: 40, to: 0 },
+        scale: { from: 0.95, to: 1 },
         duration: appleDurations.slow,
         delay: stagger(150, { from: 'first' }),
         ease: appleEasings.decelerate,
@@ -44,8 +44,8 @@ function App() {
     // CTA 区域动画
     if (ctaRef.current) {
       animate(ctaRef.current, {
-        opacity: [0, 1],
-        translateY: [20, 0],
+        opacity: { from: 0, to: 1 },
+        translateY: { from: 20, to: 0 },
         duration: appleDurations.deliberate,
         delay: 600,
         ease: appleEasings.decelerate,
