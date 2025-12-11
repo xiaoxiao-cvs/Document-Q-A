@@ -1,68 +1,73 @@
 """
-应用配置设置。
-使用 pydantic-settings 加载环境变量。
-"""
-from functools import lru_cache
-from pathlib import Path
-from typing import Optional
+核心配置模块
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+用于管理应用程序的所有配置项，通过环境变量加载敏感信息。
+"""
+from typing import List, Optional
+
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """从环境变量加载的应用设置。"""
+    """
+    应用程序配置类
     
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
+    从环境变量或 .env 文件中加载配置。
+    """
+    
+    # API 配置
+    API_V1_STR: str = Field(default="/api/v1", description="API 版本前缀路径")
+    PROJECT_NAME: str = Field(default="Document Q&A Bot", description="项目名称")
+    
+    # 服务器配置
+    HOST: str = Field(default="0.0.0.0", description="服务器主机地址")
+    PORT: int = Field(default=8000, description="服务器端口号")
+    DEBUG: bool = Field(default=True, description="是否启用调试模式")
+    
+    # 数据库配置
+    DATABASE_URL: str = Field(
+        default="sqlite:///./data/app.db", 
+        description="SQLite 数据库连接URL"
     )
     
-    # API 密钥
-    google_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
+    # LLM / OpenAI 配置
+    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API 密钥")
+    OPENAI_API_BASE: Optional[str] = Field(default=None, description="OpenAI API 基础URL")
+    LLM_MODEL: str = Field(default="gpt-3.5-turbo", description="使用的LLM模型名称")
+    EMBEDDING_MODEL: str = Field(default="text-embedding-ada-002", description="嵌入模型名称")
     
-    # 应用设置
-    app_name: str = "Document Q&A API"
-    app_version: str = "0.1.0"
-    debug: bool = False
+    # 向量数据库配置
+    CHROMA_PERSIST_DIRECTORY: str = Field(
+        default="./data/chroma", 
+        description="ChromaDB 持久化目录"
+    )
+    CHROMA_COLLECTION_NAME: str = Field(
+        default="documents", 
+        description="ChromaDB 集合名称"
+    )
     
-    # 文件存储设置
-    upload_dir: Path = Path("uploads")
-    max_file_size: int = 50 * 1024 * 1024  # 50 MB
-    allowed_extensions: set[str] = {".pdf"}
+    # 文件上传配置
+    UPLOAD_DIR: str = Field(default="./data/uploads", description="文件上传目录")
+    MAX_UPLOAD_SIZE: int = Field(default=10 * 1024 * 1024, description="最大上传文件大小(字节)")  # 10MB
+    ALLOWED_EXTENSIONS: List[str] = Field(
+        default=["pdf"], 
+        description="允许上传的文件扩展名"
+    )
     
-    # 数据库设置
-    database_url: str = "sqlite:///./document_qa.db"
+    # 文本切片配置
+    CHUNK_SIZE: int = Field(default=1000, description="文本切片大小")
+    CHUNK_OVERLAP: int = Field(default=200, description="文本切片重叠大小")
     
-    # 向量数据库设置
-    chroma_persist_dir: Path = Path("chroma_db")
+    # 检索配置
+    TOP_K_RESULTS: int = Field(default=5, description="检索返回的Top-K结果数量")
     
-    # 文本处理设置
-    chunk_size: int = 500
-    chunk_overlap: int = 50
-    
-    # LLM 设置
-    llm_provider: str = "google"  # "google" 或 "openai"
-    llm_model: str = "gemini-pro"
-    llm_temperature: float = 0.3
-    max_tokens: int = 2048
-    
-    def get_api_key(self) -> str:
-        """根据配置的 LLM 提供商获取 API 密钥。"""
-        if self.llm_provider == "google":
-            if not self.google_api_key:
-                raise ValueError("GOOGLE_API_KEY 未设置")
-            return self.google_api_key
-        elif self.llm_provider == "openai":
-            if not self.openai_api_key:
-                raise ValueError("OPENAI_API_KEY 未设置")
-            return self.openai_api_key
-        else:
-            raise ValueError(f"不支持的 LLM 提供商: {self.llm_provider}")
+    class Config:
+        """Pydantic 配置"""
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
 
 
-@lru_cache
-def get_settings() -> Settings:
-    """获取缓存的设置实例。"""
-    return Settings()
+# 创建全局配置实例
+settings = Settings()
