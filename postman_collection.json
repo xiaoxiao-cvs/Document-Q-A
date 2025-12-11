@@ -1,0 +1,246 @@
+{
+	"info": {
+		"_postman_id": "document-qa-bot-api",
+		"name": "Document Q&A Bot API",
+		"description": "API documentation for the Document Q&A Bot backend.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Documents",
+			"item": [
+				{
+					"name": "Upload Document",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"description": "PDF file to upload"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/upload",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"upload"
+							]
+						},
+						"description": "Upload a PDF document. The system will automatically parse and index it."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Documents List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents?skip=0&limit=100",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0",
+									"description": "Number of records to skip"
+								},
+								{
+									"key": "limit",
+									"value": "100",
+									"description": "Maximum number of records to return"
+								}
+							]
+						},
+						"description": "Get a list of all uploaded documents."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Document Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/:doc_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								":doc_id"
+							],
+							"variable": [
+								{
+									"key": "doc_id",
+									"value": "1",
+									"description": "ID of the document"
+								}
+							]
+						},
+						"description": "Get detailed information about a specific document."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Document",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/:doc_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								":doc_id"
+							],
+							"variable": [
+								{
+									"key": "doc_id",
+									"value": "1",
+									"description": "ID of the document to delete"
+								}
+							]
+						},
+						"description": "Delete a document and its vector index."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat",
+			"item": [
+				{
+					"name": "Send Question",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"What is this document about?\",\n    \"doc_id\": null,\n    \"session_id\": \"optional-session-id\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chat"
+							]
+						},
+						"description": "Send a question to the system and get an answer based on the documents."
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Session",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/chat/new-session",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chat",
+								"new-session"
+							]
+						},
+						"description": "Generate a new session ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/chat/history/:session_id?limit=100",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chat",
+								"history",
+								":session_id"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100",
+									"description": "Maximum number of messages to return"
+								}
+							],
+							"variable": [
+								{
+									"key": "session_id",
+									"value": "your-session-id",
+									"description": "Session ID"
+								}
+							]
+						},
+						"description": "Get chat history for a specific session."
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Chat History",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/chat/history/:session_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chat",
+								"history",
+								":session_id"
+							],
+							"variable": [
+								{
+									"key": "session_id",
+									"value": "your-session-id",
+									"description": "Session ID to clear"
+								}
+							]
+						},
+						"description": "Delete all chat history for a specific session."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api/v1",
+			"type": "string"
+		}
+	]
+}
