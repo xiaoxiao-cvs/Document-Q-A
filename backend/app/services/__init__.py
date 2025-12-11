@@ -1,21 +1,17 @@
-# Services module
-from app.services.pdf_parser import PDFParser, parse_pdf, PDFDocument
-from app.services.text_chunker import TextChunker, chunk_pdf_document, TextChunk
-from app.services.vector_store import VectorStore, get_vector_store
-from app.services.llm_service import RAGService, get_rag_service
-from app.services.document_service import DocumentService, upload_and_process_document
+"""
+服务层模块
+
+导出所有服务类实例。
+"""
+from app.services.doc_service import document_service, DocumentService
+from app.services.vector_service import vector_service, VectorService
+from app.services.chat_service import chat_service, ChatService
 
 __all__ = [
-    "PDFParser",
-    "parse_pdf",
-    "PDFDocument",
-    "TextChunker",
-    "chunk_pdf_document",
-    "TextChunk",
-    "VectorStore",
-    "get_vector_store",
-    "RAGService",
-    "get_rag_service",
+    "document_service",
     "DocumentService",
-    "upload_and_process_document",
+    "vector_service", 
+    "VectorService",
+    "chat_service",
+    "ChatService",
 ]
