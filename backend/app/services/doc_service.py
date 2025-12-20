@@ -32,26 +32,51 @@ class DocumentService:
         """确保上传目录存在"""
         os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     
-    def validate_file(self, filename: str, file_size: int) -> Tuple[bool, str]:
+    # 文件魔数字典，用于验证文件类型
+    FILE_SIGNATURES = {
+        "pdf": [b"%PDF"],  # PDF 文件魔数
+        "docx": [b"PK\x03\x04"],  # DOCX (ZIP 压缩格式)
+        "txt": None,  # 文本文件无特定魔数
+    }
+    
+    def validate_file(self, filename: str, file_size: int, content: Optional[bytes] = None) -> Tuple[bool, str]:
         """
         验证上传的文件
         
         Args:
             filename: 文件名
             file_size: 文件大小(字节)
+            content: 文件内容(可选，用于验证文件魔数)
             
         Returns:
             Tuple[bool, str]: (是否有效, 错误消息)
         """
+        # 检查文件名是否为空
+        if not filename or not filename.strip():
+            return False, "文件名不能为空"
+        
         # 检查文件扩展名
         extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
         if extension not in settings.ALLOWED_EXTENSIONS:
             return False, f"不支持的文件类型: .{extension}，仅支持: {', '.join(settings.ALLOWED_EXTENSIONS)}"
         
         # 检查文件大小
+        if file_size <= 0:
+            return False, "文件不能为空"
+        
         if file_size > settings.MAX_UPLOAD_SIZE:
             max_size_mb = settings.MAX_UPLOAD_SIZE / (1024 * 1024)
             return False, f"文件过大，最大允许 {max_size_mb}MB"
+        
+        # 如果提供了文件内容，验证文件魔数
+        if content and extension in self.FILE_SIGNATURES:
+            signatures = self.FILE_SIGNATURES[extension]
+            if signatures:  # 如果有定义魔数
+                is_valid_magic = any(
+                    content.startswith(sig) for sig in signatures
+                )
+                if not is_valid_magic:
+                    return False, f"文件内容与扩展名不匹配，请上传有效的 .{extension} 文件"
         
         return True, ""
     

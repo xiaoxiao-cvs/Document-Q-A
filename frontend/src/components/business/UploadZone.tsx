@@ -3,10 +3,12 @@ import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, File, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ProgressBar } from '../ui/Progress'
 
 interface UploadZoneProps {
   onUpload: (files: File[]) => void
   uploading?: boolean
+  uploadProgress?: number
   accept?: Record<string, string[]>
   maxSize?: number
 }
@@ -14,6 +16,7 @@ interface UploadZoneProps {
 export const UploadZone: React.FC<UploadZoneProps> = ({
   onUpload,
   uploading = false,
+  uploadProgress = 0,
   accept = {
     'application/pdf': ['.pdf'],
     'text/plain': ['.txt'],
@@ -109,6 +112,19 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               </motion.div>
             ))}
 
+            {/* Upload Progress */}
+            {uploading && uploadProgress > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <ProgressBar 
+                  progress={uploadProgress} 
+                  variant={uploadProgress === 100 ? 'success' : 'default'}
+                />
+              </motion.div>
+            )}
+
             {/* Upload Button */}
             <motion.button
               initial={{ opacity: 0 }}
@@ -124,7 +140,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               {uploading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  上传中...
+                  上传中... {uploadProgress > 0 && `${uploadProgress}%`}
                 </>
               ) : (
                 <>

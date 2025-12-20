@@ -4,23 +4,37 @@ import { Sidebar } from './components/layout/Sidebar'
 import { UploadZone } from './components/business/UploadZone'
 import { FileList } from './components/business/FileList'
 import { ChatArea } from './components/business/ChatArea'
+import { PDFViewer } from './components/business/PDFViewer'
 import { useDocuments } from './hooks/useDocuments'
 import { useChat } from './hooks/useChat'
 import { Modal } from './components/ui/Modal'
 import { Trash2 } from 'lucide-react'
+import { Source } from './types'
 
 function App() {
   const {
     documents,
     selectedDocumentIds,
     isUploading,
+    uploadProgress,
+    currentPdfUrl,
+    currentPdfFilename,
+    highlightAreas,
+    targetPage,
     fetchDocuments,
     uploadFiles,
     deleteDocument,
-    toggleDocumentSelection,
+    selectDocument,
   } = useDocuments()
 
-  const { messages, isChatLoading, sendMessage } = useChat()
+  const { 
+    messages, 
+    isChatLoading, 
+    isStreaming,
+    sendMessage, 
+    goToSource,
+    cancelStreaming,
+  } = useChat()
 
   const [deleteModal, setDeleteModal] = React.useState<{
     isOpen: boolean
@@ -49,7 +63,7 @@ function App() {
 
   // Handle document selection
   const handleSelect = (id: string) => {
-    toggleDocumentSelection(id)
+    selectDocument(id)
   }
 
   // Handle delete confirmation
@@ -77,13 +91,25 @@ function App() {
     }
   }
 
+  // Handle source click - navigate to PDF location
+  const handleSourceClick = (source: Source) => {
+    goToSource(source)
+  }
+
+  // Check if we should show the PDF panel
+  const showPdfPanel = selectedDocumentIds.length > 0
+
   return (
     <>
       <MainLayout
         sidebar={
           <Sidebar>
             <div className="border-b border-dark/10">
-              <UploadZone onUpload={handleUpload} uploading={isUploading} />
+              <UploadZone 
+                onUpload={handleUpload} 
+                uploading={isUploading}
+                uploadProgress={uploadProgress}
+              />
             </div>
             <div className="flex-1 overflow-y-auto">
               <FileList
@@ -102,11 +128,24 @@ function App() {
             )}
           </Sidebar>
         }
+        showRightPanel={showPdfPanel}
+        rightPanel={
+          <PDFViewer
+            file={currentPdfUrl}
+            filename={currentPdfFilename || undefined}
+            highlightAreas={highlightAreas}
+            targetPage={targetPage || undefined}
+          />
+        }
       >
         <ChatArea
           messages={messages}
           onSendMessage={sendMessage}
+          onSourceClick={handleSourceClick}
+          onCancelStreaming={cancelStreaming}
           loading={isChatLoading}
+          isStreaming={isStreaming}
+          hasDocuments={selectedDocumentIds.length > 0}
         />
       </MainLayout>
 

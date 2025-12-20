@@ -2,6 +2,7 @@
 向量服务模块
 
 负责文本向量化、向量存储和语义检索。
+支持使用 OpenAI Embedding 或 ChromaDB 默认嵌入。
 """
 import os
 from typing import List, Optional
@@ -17,17 +18,43 @@ class VectorService:
     向量服务类
     
     使用 ChromaDB 进行向量存储和检索。
+    支持配置 OpenAI Embedding 或使用默认嵌入。
     """
     
     def __init__(self):
         """初始化向量服务"""
         self._client: Optional[chromadb.ClientAPI] = None
         self._collection = None
+        self._embedding_function = None
         self._ensure_persist_dir()
     
     def _ensure_persist_dir(self) -> None:
         """确保持久化目录存在"""
         os.makedirs(settings.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+    
+    def _get_embedding_function(self):
+        """
+        获取嵌入函数
+        
+        如果配置了 OpenAI API Key，使用 OpenAI Embedding；
+        否则使用 ChromaDB 默认的嵌入模型。
+        """
+        if self._embedding_function is None:
+            if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "your_api_key_here":
+                try:
+                    from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+                    self._embedding_function = OpenAIEmbeddingFunction(
+                        api_key=settings.OPENAI_API_KEY,
+                        api_base=settings.OPENAI_API_BASE,
+                        model_name=settings.EMBEDDING_MODEL
+                    )
+                    print(f"✓ 使用 OpenAI Embedding 模型: {settings.EMBEDDING_MODEL}")
+                except Exception as e:
+                    print(f"⚠ OpenAI Embedding 初始化失败，使用默认嵌入: {e}")
+                    self._embedding_function = None
+            else:
+                print("⚠ 未配置 OpenAI API Key，使用 ChromaDB 默认嵌入模型")
+        return self._embedding_function
     
     @property
     def client(self) -> chromadb.ClientAPI:
@@ -52,9 +79,11 @@ class VectorService:
             Collection: ChromaDB 集合实例
         """
         if self._collection is None:
+            embedding_fn = self._get_embedding_function()
             self._collection = self.client.get_or_create_collection(
                 name=settings.CHROMA_COLLECTION_NAME,
-                metadata={"hnsw:space": "cosine"}  # 使用余弦相似度
+                metadata={"hnsw:space": "cosine"},  # 使用余弦相似度
+                embedding_function=embedding_fn
             )
         return self._collection
     

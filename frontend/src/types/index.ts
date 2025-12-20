@@ -3,6 +3,7 @@ export interface Document {
   filename: string
   file_size: number
   upload_time: string
+  status?: string
   chunk_count?: number
 }
 
@@ -15,32 +16,40 @@ export interface Message {
 }
 
 export interface Source {
-  document_id: string
-  document_name: string
+  document_id?: string
+  document_name?: string
   chunk_text: string
-  similarity_score: number
+  page?: number
+  similarity_score?: number
 }
 
 export interface ChatRequest {
   query: string
   document_ids?: string[]
+  session_id?: string
   top_k?: number
 }
 
 export interface ChatResponse {
   answer: string
   sources: Source[]
-  query: string
+  session_id?: string
+  query?: string
 }
 
 export interface UploadResponse {
   id: string
   filename: string
   file_size: number
-  chunk_count: number
+  upload_time: string
+  status: string
+  chunk_count?: number
   message: string
 }
 
 export interface ErrorResponse {
-  detail: string
+  code: number
+  message: string
+  detail?: string
+  type?: string
 }

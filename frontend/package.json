@@ -10,17 +10,19 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "axios": "^1.6.2",
-    "zustand": "^4.4.7",
+    "clsx": "^2.0.0",
     "framer-motion": "^10.16.16",
     "lucide-react": "^0.303.0",
-    "react-markdown": "^9.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
+    "react-markdown": "^9.0.1",
+    "react-pdf": "^10.2.0",
+    "react-resizable-panels": "^4.0.12",
     "remark-gfm": "^4.0.0",
-    "clsx": "^2.0.0",
-    "tailwind-merge": "^2.2.0"
+    "tailwind-merge": "^2.2.0",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",

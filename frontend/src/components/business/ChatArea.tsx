@@ -1,22 +1,31 @@
 import React, { useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Send, Loader2 } from 'lucide-react'
+import { Send, Loader2, StopCircle, Sparkles } from 'lucide-react'
 import { ChatBubble } from './ChatBubble'
-import { Message } from '@/types'
+import { Message, Source } from '@/types'
 
 interface ChatAreaProps {
   messages: Message[]
   onSendMessage: (message: string) => void
+  onSourceClick?: (source: Source) => void
+  onCancelStreaming?: () => void
   loading?: boolean
+  isStreaming?: boolean
+  hasDocuments?: boolean
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
   messages,
   onSendMessage,
+  onSourceClick,
+  onCancelStreaming,
   loading = false,
+  isStreaming = false,
+  hasDocuments = false,
 }) => {
   const [input, setInput] = React.useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -26,11 +35,30 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     scrollToBottom()
   }, [messages])
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px'
+    }
+  }, [input])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (input.trim() && !loading) {
+    if (input.trim() && !loading && !isStreaming) {
       onSendMessage(input.trim())
       setInput('')
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e)
     }
   }
 
@@ -46,44 +74,62 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-dark/5 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-dark/30"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    />
-                  </svg>
+                <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                  <Sparkles className="w-10 h-10 text-blue-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-dark mb-2">
-                  开始对话
+                  智能文档问答
                 </h3>
-                <p className="text-sm text-gray-500">
-                  上传文档后，您可以向 AI 提问关于文档的任何问题
+                <p className="text-sm text-gray-500 mb-4">
+                  {hasDocuments 
+                    ? '文档已就绪，您可以开始提问了'
+                    : '请先在左侧上传并选择文档，然后向 AI 提问'}
                 </p>
+                {hasDocuments && (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {['这份文档讲了什么？', '总结一下主要内容', '有哪些关键信息？'].map((hint) => (
+                      <button
+                        key={hint}
+                        onClick={() => setInput(hint)}
+                        className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                      >
+                        {hint}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             </div>
           </div>
         ) : (
           <>
             {messages.map((message) => (
-              <ChatBubble key={message.id} message={message} />
+              <ChatBubble 
+                key={message.id} 
+                message={message} 
+                onSourceClick={onSourceClick}
+              />
             ))}
-            {loading && (
-              <div className="flex gap-3">
+            {loading && !isStreaming && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex gap-3"
+              >
                 <div className="w-8 h-8 rounded-xl bg-dark flex items-center justify-center">
                   <Loader2 className="w-5 h-5 text-light animate-spin" />
                 </div>
                 <div className="px-4 py-3 bg-white rounded-2xl rounded-tl-sm border border-gray-200">
-                  <p className="text-sm text-gray-500">AI 正在思考...</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                    <p className="text-sm text-gray-500">AI 正在思考...</p>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </>
         )}
@@ -92,26 +138,52 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
       {/* Input Area */}
       <div className="border-t border-gray-200 p-4 bg-white">
-        <form onSubmit={handleSubmit} className="flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="输入您的问题..."
-            disabled={loading}
-            className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:border-dark focus:ring-2 focus:ring-dark/20 outline-none transition-all disabled:opacity-50"
-          />
-          <motion.button
-            type="submit"
-            disabled={!input.trim() || loading}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-6 py-3 bg-dark text-light rounded-xl font-medium hover:bg-dark/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            <Send className="w-5 h-5" />
-            发送
-          </motion.button>
+        <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+          <div className="flex-1 relative">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={hasDocuments ? "输入您的问题... (Shift+Enter 换行)" : "请先选择文档..."}
+              disabled={loading || isStreaming || !hasDocuments}
+              rows={1}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-dark focus:ring-2 focus:ring-dark/20 outline-none transition-all disabled:opacity-50 resize-none overflow-hidden"
+              style={{ minHeight: '48px', maxHeight: '150px' }}
+            />
+          </div>
+          
+          {isStreaming ? (
+            <motion.button
+              type="button"
+              onClick={onCancelStreaming}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
+            >
+              <StopCircle className="w-5 h-5" />
+              停止
+            </motion.button>
+          ) : (
+            <motion.button
+              type="submit"
+              disabled={!input.trim() || loading || !hasDocuments}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-3 bg-dark text-light rounded-xl font-medium hover:bg-dark/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              <Send className="w-5 h-5" />
+              发送
+            </motion.button>
+          )}
         </form>
+        
+        {/* 提示信息 */}
+        {!hasDocuments && (
+          <p className="text-xs text-amber-600 mt-2 text-center">
+            ⚠️ 请先在左侧上传并选择至少一个文档
+          </p>
+        )}
       </div>
     </div>
   )

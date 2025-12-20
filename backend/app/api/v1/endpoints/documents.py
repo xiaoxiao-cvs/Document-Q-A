@@ -50,8 +50,8 @@ async def upload_document(
     content = await file.read()
     file_size = len(content)
     
-    # 验证文件
-    is_valid, error_msg = document_service.validate_file(file.filename, file_size)
+    # 验证文件（包括文件魔数验证）
+    is_valid, error_msg = document_service.validate_file(file.filename, file_size, content)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -100,8 +100,10 @@ async def upload_document(
     return UploadResponse(
         id=db_document.id,
         filename=db_document.filename,
+        file_size=db_document.file_size,
         upload_time=db_document.upload_time,
         status=db_document.status,
+        chunk_count=db_document.chunk_count,
         message=message if success else f"处理失败: {message}"
     )
 
@@ -130,8 +132,10 @@ async def get_documents(
         DocumentListItem(
             id=doc.id,
             filename=doc.filename,
+            file_size=doc.file_size,
             upload_time=doc.upload_time,
-            status=doc.status
+            status=doc.status,
+            chunk_count=doc.chunk_count
         )
         for doc in documents
     ]

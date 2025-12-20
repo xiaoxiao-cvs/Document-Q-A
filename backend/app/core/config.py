@@ -62,6 +62,22 @@ class Settings(BaseSettings):
     # 检索配置
     TOP_K_RESULTS: int = Field(default=5, description="检索返回的Top-K结果数量")
     
+    # CORS 配置
+    CORS_ORIGINS: List[str] = Field(
+        default=[
+            "http://localhost",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+        ],
+        description="允许的CORS源列表"
+    )
+    
+    # 速率限制配置
+    RATE_LIMIT_REQUESTS: int = Field(default=100, description="每分钟最大请求数")
+    RATE_LIMIT_WINDOW: int = Field(default=60, description="速率限制时间窗口(秒)")
+    
     class Config:
         """Pydantic 配置"""
         env_file = ".env"

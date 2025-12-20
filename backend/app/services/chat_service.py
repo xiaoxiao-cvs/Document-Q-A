@@ -68,11 +68,16 @@ class ChatService:
         for i, result in enumerate(search_results, start=1):
             content = result["content"]
             page = result.get("page", 1)
+            doc_id = result.get("doc_id")
+            score = result.get("score", 0)
             
             context_parts.append(f"[片段{i}，第{page}页]\n{content}")
             sources.append(SourceInfo(
+                document_id=doc_id,
+                document_name=None,  # 可以后续从数据库查询
                 page=page,
-                content=content[:200] + "..." if len(content) > 200 else content
+                chunk_text=content[:200] + "..." if len(content) > 200 else content,
+                similarity_score=score
             ))
         
         context = "\n\n---\n\n".join(context_parts)
@@ -177,21 +182,38 @@ class ChatService:
         Returns:
             ChatResponse: 聊天响应，包含回答和来源
         """
+        # 获取问题内容（兼容question和query字段）
+        question = request.get_question
+        if not question:
+            return ChatResponse(
+                answer="请提供一个问题",
+                sources=[],
+                session_id=request.session_id,
+                query=""
+            )
+        
         # 确定会话ID
         session_id = request.session_id or self.generate_session_id()
         
+        # 获取文档ID列表
+        doc_ids = request.get_doc_ids
+        
         # 1. 在向量数据库中检索相关内容
+        # 如果有多个文档ID，取第一个进行检索（待优化为多文档检索）
+        doc_id = doc_ids[0] if doc_ids else None
+        top_k = request.top_k or settings.TOP_K_RESULTS
+        
         search_results = vector_service.search(
-            query=request.question,
-            doc_id=request.doc_id,
-            top_k=settings.TOP_K_RESULTS
+            query=question,
+            doc_id=doc_id,
+            top_k=top_k
         )
         
         # 2. 构建上下文和来源信息
         context, sources = self._build_context(search_results)
         
         # 3. 构建 Prompt
-        messages = self._build_prompt(context, request.question)
+        messages = self._build_prompt(context, question)
         
         # 4. 调用 LLM 获取回答
         answer = await self._call_llm(messages)
@@ -202,8 +224,8 @@ class ChatService:
             ChatMessageCreate(
                 session_id=session_id,
                 role="user",
-                content=request.question,
-                doc_id=request.doc_id
+                content=question,
+                doc_id=doc_id
             )
         )
         
@@ -214,15 +236,16 @@ class ChatService:
                 session_id=session_id,
                 role="assistant",
                 content=answer,
-                doc_id=request.doc_id,
-                sources=json.dumps([s.model_dump() for s in sources], ensure_ascii=False) if sources else None
+                doc_id=doc_id,
+                sources=json.dumps([s.model_dump(by_alias=True) for s in sources], ensure_ascii=False) if sources else None
             )
         )
         
         return ChatResponse(
             answer=answer,
             sources=sources,
-            session_id=session_id
+            session_id=session_id,
+            query=question
         )
 
 

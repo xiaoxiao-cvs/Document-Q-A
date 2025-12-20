@@ -52,8 +52,10 @@ class DocumentListItem(BaseModel):
     """
     id: int = Field(..., description="文档ID")
     filename: str = Field(..., description="原始文件名")
+    file_size: Optional[int] = Field(None, description="文件大小(字节)")
     upload_time: datetime = Field(..., description="上传时间")
     status: str = Field(..., description="处理状态")
+    chunk_count: Optional[int] = Field(None, description="文档切片数量")
     
     class Config:
         """Pydantic 配置"""
@@ -73,8 +75,10 @@ class UploadResponse(BaseModel):
     """
     id: int = Field(..., description="文档ID")
     filename: str = Field(..., description="原始文件名")
+    file_size: int = Field(..., description="文件大小(字节)")
     upload_time: datetime = Field(..., description="上传时间")
     status: str = Field(..., description="处理状态")
+    chunk_count: Optional[int] = Field(None, description="文档切片数量")
     message: str = Field(..., description="操作结果消息")
     
     class Config:

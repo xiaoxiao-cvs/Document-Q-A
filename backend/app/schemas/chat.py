@@ -15,19 +15,45 @@ class SourceInfo(BaseModel):
     
     表示回答中引用的文档片段来源。
     """
+    document_id: Optional[int] = Field(None, description="文档ID")
+    document_name: Optional[str] = Field(None, description="文档名称")
     page: Optional[int] = Field(None, description="文档页码")
-    content: str = Field(..., description="引用的原文片段")
+    content: str = Field(..., alias="chunk_text", description="引用的原文片段")
+    similarity_score: Optional[float] = Field(None, description="相似度分数")
+    
+    class Config:
+        populate_by_name = True
 
 
 class ChatRequest(BaseModel):
     """
     聊天请求模式
     
-    用于用户发送提问。
+    用于用户发送提问。支持 question 和 query 两种字段名称以兼容前端。
     """
-    question: str = Field(..., min_length=1, max_length=2000, description="用户问题")
-    doc_id: Optional[int] = Field(None, description="指定的文档ID，不传则在所有文档中搜索")
+    question: Optional[str] = Field(None, min_length=1, max_length=2000, description="用户问题")
+    query: Optional[str] = Field(None, min_length=1, max_length=2000, description="用户问题(别名)")
+    doc_id: Optional[int] = Field(None, description="指定的单个文档ID")
+    doc_ids: Optional[List[int]] = Field(None, alias="document_ids", description="指定的文档ID列表")
     session_id: Optional[str] = Field(None, description="会话ID，用于关联上下文")
+    top_k: Optional[int] = Field(None, description="返回的最大结果数")
+    
+    @property
+    def get_question(self) -> str:
+        """获取问题内容，优先使用question，其次使用query"""
+        return self.question or self.query or ""
+    
+    @property
+    def get_doc_ids(self) -> Optional[List[int]]:
+        """获取文档ID列表"""
+        if self.doc_ids:
+            return self.doc_ids
+        if self.doc_id:
+            return [self.doc_id]
+        return None
+    
+    class Config:
+        populate_by_name = True
 
 
 class ChatResponse(BaseModel):
@@ -39,6 +65,7 @@ class ChatResponse(BaseModel):
     answer: str = Field(..., description="AI的回答内容")
     sources: List[SourceInfo] = Field(default_factory=list, description="引用来源列表")
     session_id: Optional[str] = Field(None, description="会话ID")
+    query: Optional[str] = Field(None, description="原始问题")
 
 
 class ChatMessageBase(BaseModel):
