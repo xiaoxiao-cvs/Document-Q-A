@@ -173,7 +173,14 @@ class ChatService:
         request: ChatRequest
     ) -> ChatResponse:
         """
-        处理用户提问并返回回答
+        处理用户提问并返回回答 (RAG 核心流程)
+        
+        流程说明:
+        1. 接收用户问题
+        2. 在向量数据库中检索相关文档片段 (Retrieve)
+        3. 将检索到的片段组装成 Prompt 上下文 (Augment)
+        4. 调用 LLM 生成回答 (Generate)
+        5. 保存对话记录
         
         Args:
             db: 数据库会话
@@ -198,7 +205,8 @@ class ChatService:
         # 获取文档ID列表
         doc_ids = request.get_doc_ids
         
-        # 1. 在向量数据库中检索相关内容
+        # --- 步骤 1: 检索 (Retrieve) ---
+        # 在向量数据库中检索相关内容
         # 如果有多个文档ID，取第一个进行检索（待优化为多文档检索）
         doc_id = doc_ids[0] if doc_ids else None
         top_k = request.top_k or settings.TOP_K_RESULTS
@@ -209,16 +217,21 @@ class ChatService:
             top_k=top_k
         )
         
-        # 2. 构建上下文和来源信息
+        # --- 步骤 2: 增强 (Augment) ---
+        # 构建上下文和来源信息
+        # 将检索到的零散片段整理成 LLM 能读懂的上下文文本
         context, sources = self._build_context(search_results)
         
-        # 3. 构建 Prompt
+        # 构建 Prompt
+        # 组合系统提示词、上下文和用户问题
         messages = self._build_prompt(context, question)
         
-        # 4. 调用 LLM 获取回答
+        # --- 步骤 3: 生成 (Generate) ---
+        # 调用 LLM 获取回答
         answer = await self._call_llm(messages)
         
-        # 5. 保存用户消息到数据库
+        # --- 步骤 4: 记录 ---
+        # 保存用户消息到数据库
         chat_crud.create_chat_message(
             db,
             ChatMessageCreate(
@@ -229,7 +242,7 @@ class ChatService:
             )
         )
         
-        # 6. 保存 AI 回答到数据库
+        # 保存 AI 回答到数据库
         chat_crud.create_chat_message(
             db,
             ChatMessageCreate(
