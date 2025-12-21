@@ -4,6 +4,7 @@
 处理问答对话、Prompt 组装和 LLM 调用。
 """
 import json
+import re
 import uuid
 from typing import AsyncGenerator, Dict, List, Optional, Tuple
 
@@ -21,6 +22,20 @@ class ChatService:
     
     提供问答对话功能，整合向量检索和 LLM 调用。
     """
+    
+    # 概览性问题的关键词模式
+    OVERVIEW_PATTERNS = [
+        r"这[个份篇]文[档章].*?(讲|说|关于|是|介绍|主要|内容|主题|概述|概要|摘要)",
+        r"文[档章].*?(讲|说|关于|是|介绍|主要|内容|主题|概述|概要|摘要)",
+        r"(总结|概括|概述|简述|归纳).*?(一下|下|全文|文档|内容|主要)",
+        r"(主要|核心|关键|重要).*(内容|观点|论点|结论|发现)",
+        r"(是|讲).*?(什么|啥|哪些)",
+        r"(介绍|说明|描述).*(什么|啥)",
+        r"what.*?(about|is|are|does).*?(this|the|document|paper|article)",
+        r"summarize|summary|overview|abstract|introduction",
+        r"(全文|整体|整篇|通篇).*(讲|说|介绍|分析)",
+        r"^(这|它|该).*(讲|说|是|写).*?(什么|啥)",
+    ]
     
     # 系统提示词模板
     SYSTEM_PROMPT = """你是一个专业的文档问答助手。你的任务是根据提供的文档内容来回答用户的问题。
@@ -49,7 +64,32 @@ class ChatService:
         """
         return str(uuid.uuid4())[:8]
     
-    def _build_context(self, search_results: List[dict]) -> Tuple[str, List[SourceInfo]]:
+    def _is_overview_question(self, question: str) -> bool:
+        """
+        判断问题是否是概览性问题
+        
+        Args:
+            question: 用户问题
+            
+        Returns:
+            bool: 是否为概览性问题
+        """
+        question_lower = question.lower().strip()
+        
+        for pattern in self.OVERVIEW_PATTERNS:
+            if re.search(pattern, question_lower, re.IGNORECASE):
+                return True
+        
+        # 短问题且包含特定词汇
+        if len(question) < 20:
+            short_keywords = ["什么", "啥", "哪些", "介绍", "概述", "总结", "讲了", "说了", "关于"]
+            for kw in short_keywords:
+                if kw in question:
+                    return True
+        
+        return False
+    
+    def _build_context(self, search_results: List[dict], first_page_content: Optional[str] = None) -> Tuple[str, List[SourceInfo]]:
         """
         根据检索结果构建上下文
         
@@ -81,6 +121,19 @@ class ChatService:
             ))
         
         context = "\n\n---\n\n".join(context_parts)
+        
+        # 如果提供了第一页内容，添加到上下文开头
+        if first_page_content:
+            context = f"[文档概述 - 第1页]\n{first_page_content}\n\n===== 相关片段 =====\n\n{context}"
+            # 添加第一页作为来源
+            sources.insert(0, SourceInfo(
+                document_id=search_results[0].get("doc_id") if search_results else None,
+                document_name=None,
+                page=1,
+                chunk_text=first_page_content[:200] + "..." if len(first_page_content) > 200 else first_page_content,
+                similarity_score=1.0  # 概述内容给最高分
+            ))
+        
         return context, sources
     
     def _build_prompt(self, context: str, question: str) -> List[dict]:
@@ -292,9 +345,14 @@ class ChatService:
         )
         
         # --- 步骤 2: 增强 (Augment) ---
+        # 智能判断：如果是概览性问题，额外获取第一页内容
+        first_page_content = None
+        if doc_id and self._is_overview_question(question):
+            first_page_content = vector_service.get_first_page_chunks(doc_id)
+        
         # 构建上下文和来源信息
         # 将检索到的零散片段整理成 LLM 能读懂的上下文文本
-        context, sources = self._build_context(search_results)
+        context, sources = self._build_context(search_results, first_page_content)
         
         # 构建 Prompt
         # 组合系统提示词、上下文和用户问题
@@ -373,7 +431,12 @@ class ChatService:
         )
         
         # --- 步骤 2: 增强 (Augment) ---
-        context, sources = self._build_context(search_results)
+        # 智能判断：如果是概览性问题，额外获取第一页内容
+        first_page_content = None
+        if doc_id and self._is_overview_question(question):
+            first_page_content = vector_service.get_first_page_chunks(doc_id)
+        
+        context, sources = self._build_context(search_results, first_page_content)
         messages = self._build_prompt(context, question)
         
         # 发送来源信息

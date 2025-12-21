@@ -242,6 +242,72 @@ class VectorService:
             "collection_name": settings.CHROMA_COLLECTION_NAME,
             "count": self.collection.count()
         }
+    
+    def get_first_page_chunks(self, doc_id: int, max_chars: int = 2000) -> Optional[str]:
+        """
+        获取文档第一页的内容
+        
+        Args:
+            doc_id: 文档ID
+            max_chars: 最大字符数限制
+            
+        Returns:
+            Optional[str]: 第一页内容，如果没找到返回 None
+        """
+        try:
+            # 查询该文档第一页的chunks
+            results = self.collection.get(
+                where={"$and": [
+                    {"doc_id": doc_id},
+                    {"page": 1}
+                ]},
+                include=["documents", "metadatas"]
+            )
+            
+            if not results or not results["documents"]:
+                # 如果没有第一页标记，尝试获取 chunk_index 最小的
+                results = self.collection.get(
+                    where={"doc_id": doc_id},
+                    include=["documents", "metadatas"]
+                )
+                
+                if not results or not results["documents"]:
+                    return None
+                
+                # 按 chunk_index 排序，取最前面的
+                items = list(zip(results["documents"], results["metadatas"]))
+                items.sort(key=lambda x: x[1].get("chunk_index", 0))
+                
+                # 取前几个 chunks 直到达到字符限制
+                content_parts = []
+                total_chars = 0
+                for doc, _ in items:
+                    if total_chars + len(doc) > max_chars:
+                        break
+                    content_parts.append(doc)
+                    total_chars += len(doc)
+                
+                return "\n".join(content_parts) if content_parts else None
+            
+            # 合并第一页的所有 chunks
+            content_parts = []
+            total_chars = 0
+            
+            # 按 chunk_index 排序
+            items = list(zip(results["documents"], results["metadatas"]))
+            items.sort(key=lambda x: x[1].get("chunk_index", 0))
+            
+            for doc, _ in items:
+                if total_chars + len(doc) > max_chars:
+                    break
+                content_parts.append(doc)
+                total_chars += len(doc)
+            
+            return "\n".join(content_parts) if content_parts else None
+            
+        except Exception as e:
+            print(f"获取第一页内容失败: {e}")
+            return None
 
 
 # 创建全局服务实例
