@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Document, Message, Source } from '@/types'
+import { Document, Message, Source, TokenUsage } from '@/types'
 
 export interface HighlightArea {
   page: number
@@ -14,6 +14,7 @@ interface AppState {
   // Documents
   documents: Document[]
   selectedDocumentIds: string[]
+  currentDocumentId: string | null  // 当前选中的单个文档（用于问答页面）
   isUploading: boolean
   uploadProgress: number
   
@@ -28,6 +29,10 @@ interface AppState {
   isChatLoading: boolean
   isStreaming: boolean
   streamingContent: string
+  sessionId: string | null
+  
+  // Token Usage (累计)
+  tokenUsage: TokenUsage
   
   // Actions
   setDocuments: (documents: Document[]) => void
@@ -35,6 +40,7 @@ interface AppState {
   removeDocument: (id: string) => void
   toggleDocumentSelection: (id: string) => void
   setSelectedDocumentIds: (ids: string[]) => void
+  setCurrentDocumentId: (id: string | null) => void
   clearSelection: () => void
   setIsUploading: (isUploading: boolean) => void
   setUploadProgress: (progress: number) => void
@@ -56,12 +62,18 @@ interface AppState {
   setStreamingContent: (content: string) => void
   appendStreamingContent: (chunk: string) => void
   clearMessages: () => void
+  setSessionId: (sessionId: string | null) => void
+  
+  // Token Usage Actions
+  addTokenUsage: (usage: TokenUsage) => void
+  resetTokenUsage: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   // Initial state
   documents: [],
   selectedDocumentIds: [],
+  currentDocumentId: null,
   isUploading: false,
   uploadProgress: 0,
   
@@ -76,6 +88,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   isChatLoading: false,
   isStreaming: false,
   streamingContent: '',
+  sessionId: null,
+  
+  // Token Usage initial state
+  tokenUsage: {
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    total_tokens: 0,
+  },
   
   // Documents actions
   setDocuments: (documents) => set({ documents }),
@@ -88,7 +108,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   removeDocument: (id) => 
     set((state) => ({ 
       documents: state.documents.filter(doc => doc.id !== id),
-      selectedDocumentIds: state.selectedDocumentIds.filter(docId => docId !== id)
+      selectedDocumentIds: state.selectedDocumentIds.filter(docId => docId !== id),
+      currentDocumentId: state.currentDocumentId === id ? null : state.currentDocumentId,
     })),
   
   toggleDocumentSelection: (id) => 
@@ -99,6 +120,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     })),
   
   setSelectedDocumentIds: (ids) => set({ selectedDocumentIds: ids }),
+  
+  setCurrentDocumentId: (id) => set({ currentDocumentId: id }),
   
   clearSelection: () => set({ selectedDocumentIds: [] }),
   
@@ -168,5 +191,25 @@ export const useAppStore = create<AppState>((set, get) => ({
       streamingContent: state.streamingContent + chunk,
     })),
   
-  clearMessages: () => set({ messages: [], streamingContent: '' }),
+  clearMessages: () => set({ 
+    messages: [], 
+    streamingContent: '',
+    tokenUsage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+  }),
+  
+  setSessionId: (sessionId) => set({ sessionId }),
+  
+  // Token Usage Actions
+  addTokenUsage: (usage) =>
+    set((state) => ({
+      tokenUsage: {
+        prompt_tokens: state.tokenUsage.prompt_tokens + usage.prompt_tokens,
+        completion_tokens: state.tokenUsage.completion_tokens + usage.completion_tokens,
+        total_tokens: state.tokenUsage.total_tokens + usage.total_tokens,
+      },
+    })),
+  
+  resetTokenUsage: () => set({
+    tokenUsage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+  }),
 }))

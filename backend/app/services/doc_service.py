@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 
 from pypdf import PdfReader
+from docx import Document as DocxDocument
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -123,6 +124,107 @@ class DocumentService:
         full_text = "\n\n".join(text_parts)
         return full_text, len(reader.pages)
     
+    def extract_text_from_txt(self, filepath: str) -> Tuple[str, int]:
+        """
+        从TXT文件中提取文本
+        
+        Args:
+            filepath: TXT文件路径
+            
+        Returns:
+            Tuple[str, int]: (提取的文本内容, 总页数估算)
+        """
+        # 尝试多种编码读取
+        encodings = ['utf-8', 'gbk', 'gb2312', 'utf-16', 'latin-1']
+        text = None
+        
+        for encoding in encodings:
+            try:
+                with open(filepath, 'r', encoding=encoding) as f:
+                    text = f.read()
+                break
+            except (UnicodeDecodeError, UnicodeError):
+                continue
+        
+        if text is None:
+            # 最后尝试以二进制读取并忽略错误
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                text = f.read()
+        
+        # 估算页数（假设每页约 3000 字符）
+        estimated_pages = max(1, len(text) // 3000 + 1)
+        
+        # 添加页码标记（每 3000 字符一页）
+        text_parts = []
+        chars_per_page = 3000
+        for i in range(0, len(text), chars_per_page):
+            page_num = i // chars_per_page + 1
+            page_text = text[i:i + chars_per_page]
+            text_parts.append(f"[第{page_num}页]\n{page_text}")
+        
+        full_text = "\n\n".join(text_parts) if text_parts else text
+        return full_text, estimated_pages
+    
+    def extract_text_from_docx(self, filepath: str) -> Tuple[str, int]:
+        """
+        从DOCX文件中提取文本
+        
+        Args:
+            filepath: DOCX文件路径
+            
+        Returns:
+            Tuple[str, int]: (提取的文本内容, 总页数估算)
+        """
+        doc = DocxDocument(filepath)
+        text_parts = []
+        current_text = []
+        chars_per_page = 3000
+        current_page = 1
+        char_count = 0
+        
+        for para in doc.paragraphs:
+            para_text = para.text.strip()
+            if para_text:
+                current_text.append(para_text)
+                char_count += len(para_text)
+                
+                # 每 3000 字符作为一页
+                if char_count >= chars_per_page:
+                    text_parts.append(f"[第{current_page}页]\n" + "\n".join(current_text))
+                    current_text = []
+                    char_count = 0
+                    current_page += 1
+        
+        # 添加剩余文本
+        if current_text:
+            text_parts.append(f"[第{current_page}页]\n" + "\n".join(current_text))
+        
+        full_text = "\n\n".join(text_parts)
+        estimated_pages = current_page
+        
+        return full_text, estimated_pages
+    
+    def extract_text(self, filepath: str) -> Tuple[str, int]:
+        """
+        根据文件类型提取文本
+        
+        Args:
+            filepath: 文件路径
+            
+        Returns:
+            Tuple[str, int]: (提取的文本内容, 总页数)
+        """
+        extension = filepath.rsplit(".", 1)[-1].lower() if "." in filepath else ""
+        
+        if extension == "pdf":
+            return self.extract_text_from_pdf(filepath)
+        elif extension == "txt":
+            return self.extract_text_from_txt(filepath)
+        elif extension == "docx":
+            return self.extract_text_from_docx(filepath)
+        else:
+            raise ValueError(f"不支持的文件类型: .{extension}")
+    
     def chunk_text(
         self, 
         text: str, 
@@ -208,11 +310,11 @@ class DocumentService:
                 DocumentUpdate(status="processing")
             )
             
-            # 提取文本
-            text, page_count = self.extract_text_from_pdf(filepath)
+            # 提取文本（根据文件类型自动选择方法）
+            text, page_count = self.extract_text(filepath)
             
             if not text.strip():
-                raise ValueError("无法从PDF中提取文本内容")
+                raise ValueError("无法从文档中提取文本内容")
             
             # 切分文本
             chunks = self.chunk_text(text)

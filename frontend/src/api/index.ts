@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Document, ChatRequest, ChatResponse, UploadResponse, Source } from '@/types'
+import { Document, ChatRequest, ChatResponse, UploadResponse, Source, TokenUsage } from '@/types'
 
 // API 基础路径从环境变量读取
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -95,6 +95,11 @@ export const documentsApi = {
   getPdfUrl: (documentId: string): string => {
     return `${API_BASE_URL}/v1/documents/${documentId}/file`
   },
+
+  // Get document thumbnail URL
+  getThumbnailUrl: (documentId: string): string => {
+    return `${API_BASE_URL}/v1/documents/${documentId}/thumbnail`
+  },
 }
 
 // Chat API
@@ -111,7 +116,7 @@ export const chatApi = {
     onChunk: (chunk: string) => void,
     onSources?: (sources: Source[]) => void,
     onError?: (error: Error) => void,
-    onComplete?: () => void,
+    onComplete?: (usage?: TokenUsage) => void,
   ): Promise<void> => {
     try {
       const response = await fetch(`${API_BASE_URL}/v1/chat/stream`, {
@@ -141,9 +146,8 @@ export const chatApi = {
         if (done) {
           // 处理最后的 buffer
           if (buffer.trim()) {
-            processSSELine(buffer, onChunk, onSources)
+            processSSELine(buffer, onChunk, onSources, onComplete)
           }
-          onComplete?.()
           break
         }
 
@@ -154,7 +158,7 @@ export const chatApi = {
         buffer = lines.pop() || ''
 
         for (const line of lines) {
-          processSSELine(line, onChunk, onSources)
+          processSSELine(line, onChunk, onSources, onComplete)
         }
       }
     } catch (error) {
@@ -168,6 +172,7 @@ function processSSELine(
   line: string,
   onChunk: (chunk: string) => void,
   onSources?: (sources: Source[]) => void,
+  onComplete?: (usage?: TokenUsage) => void,
 ) {
   const trimmed = line.trim()
   if (!trimmed || trimmed.startsWith(':')) return
@@ -192,7 +197,8 @@ function processSSELine(
           return
         }
         if (parsed.type === 'done') {
-          // 完成标记
+          // 完成标记，提取 token 用量
+          onComplete?.(parsed.usage)
           return
         }
         if (parsed.type === 'error') {
@@ -207,6 +213,7 @@ function processSSELine(
           return
         }
         if (parsed.done) {
+          onComplete?.(parsed.usage)
           return
         }
       } catch {

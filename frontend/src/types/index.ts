@@ -23,6 +23,12 @@ export interface Source {
   similarity_score?: number
 }
 
+export interface TokenUsage {
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+}
+
 export interface ChatRequest {
   query: string
   document_ids?: string[]
@@ -35,6 +41,7 @@ export interface ChatResponse {
   sources: Source[]
   session_id?: string
   query?: string
+  usage?: TokenUsage
 }
 
 export interface UploadResponse {

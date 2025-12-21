@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react'
 import { useAppStore } from '@/store'
 import { chatApi } from '@/api'
-import { Message, Source } from '@/types'
+import { Message, Source, TokenUsage } from '@/types'
 
 export const useChat = () => {
   const {
@@ -10,6 +10,8 @@ export const useChat = () => {
     isStreaming,
     streamingContent,
     selectedDocumentIds,
+    currentDocumentId,
+    tokenUsage,
     addMessage,
     updateLastMessage,
     setIsChatLoading,
@@ -17,6 +19,7 @@ export const useChat = () => {
     setStreamingContent,
     appendStreamingContent,
     navigateToSource,
+    addTokenUsage,
   } = useAppStore()
 
   // Abort controller for canceling streaming
@@ -25,6 +28,11 @@ export const useChat = () => {
   // Send a message with streaming support
   const sendMessage = useCallback(async (query: string, useStreaming = true) => {
     if (!query.trim()) return
+
+    // 确定使用哪些文档ID
+    const docIds = currentDocumentId 
+      ? [currentDocumentId] 
+      : (selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined)
 
     // Add user message
     const userMessage: Message = {
@@ -61,7 +69,7 @@ export const useChat = () => {
         await chatApi.sendMessageStream(
           {
             query: query.trim(),
-            document_ids: selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined,
+            document_ids: docIds,
             top_k: 5,
           },
           // On chunk received
@@ -89,16 +97,19 @@ export const useChat = () => {
             console.error('Streaming error:', error)
             updateLastMessage(accumulatedContent || `抱歉，发生了错误：${error.message}`)
           },
-          // On complete
-          () => {
+          // On complete with usage
+          (usage?: TokenUsage) => {
             setIsStreaming(false)
+            if (usage) {
+              addTokenUsage(usage)
+            }
           }
         )
       } else {
         // 非流式输出
         const response = await chatApi.sendMessage({
           query: query.trim(),
-          document_ids: selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined,
+          document_ids: docIds,
           top_k: 5,
         })
 
@@ -110,6 +121,11 @@ export const useChat = () => {
           sources: response.sources,
         }
         addMessage(aiMessage)
+        
+        // 添加 token 用量
+        if (response.usage) {
+          addTokenUsage(response.usage)
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error)
@@ -130,7 +146,7 @@ export const useChat = () => {
       setIsChatLoading(false)
       setIsStreaming(false)
     }
-  }, [selectedDocumentIds, addMessage, updateLastMessage, setIsChatLoading, setIsStreaming, setStreamingContent])
+  }, [currentDocumentId, selectedDocumentIds, addMessage, updateLastMessage, setIsChatLoading, setIsStreaming, setStreamingContent, addTokenUsage])
 
   // Navigate to source in PDF
   const goToSource = useCallback((source: Source) => {
@@ -152,6 +168,7 @@ export const useChat = () => {
     isChatLoading,
     isStreaming,
     streamingContent,
+    tokenUsage,
     sendMessage,
     goToSource,
     cancelStreaming,

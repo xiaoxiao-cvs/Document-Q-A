@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = Field(default="./data/uploads", description="文件上传目录")
     MAX_UPLOAD_SIZE: int = Field(default=10 * 1024 * 1024, description="最大上传文件大小(字节)")  # 10MB
     ALLOWED_EXTENSIONS: List[str] = Field(
-        default=["pdf"], 
+        default=["pdf", "txt", "docx"], 
         description="允许上传的文件扩展名"
     )
     

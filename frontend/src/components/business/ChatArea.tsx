@@ -77,7 +77,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                 <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
                   <Sparkles className="w-10 h-10 text-blue-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-dark mb-2">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   智能文档问答
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
@@ -91,7 +91,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                       <button
                         key={hint}
                         onClick={() => setInput(hint)}
-                        className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                        className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors border border-gray-200"
                       >
                         {hint}
                       </button>
@@ -116,10 +116,10 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="flex gap-3"
               >
-                <div className="w-8 h-8 rounded-xl bg-dark flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 text-light animate-spin" />
+                <div className="w-8 h-8 rounded-xl bg-gray-800 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
                 </div>
-                <div className="px-4 py-3 bg-white rounded-2xl rounded-tl-sm border border-gray-200">
+                <div className="px-4 py-3 bg-gray-50 rounded-2xl rounded-tl-sm border border-gray-200">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -148,7 +148,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               placeholder={hasDocuments ? "输入您的问题... (Shift+Enter 换行)" : "请先选择文档..."}
               disabled={loading || isStreaming || !hasDocuments}
               rows={1}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-dark focus:ring-2 focus:ring-dark/20 outline-none transition-all disabled:opacity-50 resize-none overflow-hidden"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-gray-600 focus:ring-2 focus:ring-gray-300 outline-none transition-all disabled:opacity-50 resize-none overflow-hidden bg-white"
               style={{ minHeight: '48px', maxHeight: '150px' }}
             />
           </div>
@@ -170,7 +170,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               disabled={!input.trim() || loading || !hasDocuments}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-dark text-light rounded-xl font-medium hover:bg-dark/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-gray-800 text-white rounded-xl font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               <Send className="w-5 h-5" />
               发送

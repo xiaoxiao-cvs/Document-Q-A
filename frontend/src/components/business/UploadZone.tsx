@@ -2,7 +2,7 @@
 import React, { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, File, X, Loader2 } from 'lucide-react'
+import { Upload, File, X, Loader2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProgressBar } from '../ui/Progress'
 
@@ -12,6 +12,7 @@ interface UploadZoneProps {
   uploadProgress?: number
   accept?: Record<string, string[]>
   maxSize?: number
+  compact?: boolean
 }
 
 export const UploadZone: React.FC<UploadZoneProps> = ({
@@ -24,12 +25,18 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
   },
   maxSize = 10 * 1024 * 1024, // 10MB
+  compact = false,
 }) => {
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([])
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setSelectedFiles(acceptedFiles)
-  }, [])
+    if (compact) {
+      // 紧凑模式直接上传
+      onUpload(acceptedFiles)
+    } else {
+      setSelectedFiles(acceptedFiles)
+    }
+  }, [compact, onUpload])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -49,6 +56,50 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     setSelectedFiles(files => files.filter((_, i) => i !== index))
   }
 
+  // 紧凑模式 - 卡片大小的上传区
+  if (compact) {
+    return (
+      <div
+        {...getRootProps()}
+        className={cn(
+          'flex-shrink-0 w-56 cursor-pointer group/upload',
+          'bg-white rounded-xl border-2 border-dashed border-gray-300',
+          'hover:border-gray-400 hover:bg-gray-50 transition-all duration-200',
+          isDragActive && 'border-gray-500 bg-gray-100 border-solid',
+          uploading && 'opacity-50 cursor-not-allowed'
+        )}
+      >
+        <input {...getInputProps()} disabled={uploading} />
+        {/* 上半部分 - 图标区域，与缩略图高度一致 */}
+        <div className="h-32 flex flex-col items-center justify-center border-b border-gray-100">
+          {uploading ? (
+            <>
+              <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+              {uploadProgress > 0 && (
+                <p className="text-xs text-gray-400 mt-2">{uploadProgress}%</p>
+              )}
+            </>
+          ) : isDragActive ? (
+            <Upload className="w-8 h-8 text-gray-600" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover/upload:bg-gray-200 transition-colors">
+              <Plus className="w-6 h-6 text-gray-500" />
+            </div>
+          )}
+        </div>
+        {/* 下半部分 - 文字区域，与文档信息区域一致 */}
+        <div className="p-3">
+          <p className="text-sm text-gray-700 font-medium mb-1">
+            {uploading ? '上传中...' : isDragActive ? '释放上传' : '上传文档'}
+          </p>
+          <p className="text-xs text-gray-400">点击或拖拽文件</p>
+          <p className="text-xs text-gray-300 mt-1">PDF, TXT, DOCX</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 标准模式 - 大上传区
   return (
     <div className="p-4 space-y-4">
       {/* Dropzone */}
@@ -57,23 +108,23 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         className={cn(
           'border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all',
           isDragActive
-            ? 'border-dark bg-dark/5 border-solid'
-            : 'border-light/30 hover:border-light/50 bg-dark-secondary/50',
+            ? 'border-gray-600 bg-gray-100 border-solid'
+            : 'border-gray-300 hover:border-gray-400 bg-gray-50',
           uploading && 'opacity-50 cursor-not-allowed'
         )}
       >
         <input {...getInputProps()} disabled={uploading} />
         <Upload className={cn(
           'w-12 h-12 mx-auto mb-4',
-          isDragActive ? 'text-dark' : 'text-light/60'
+          isDragActive ? 'text-gray-700' : 'text-gray-400'
         )} />
         {isDragActive ? (
-          <p className="text-light font-medium">释放以上传文件...</p>
+          <p className="text-gray-700 font-medium">释放以上传文件...</p>
         ) : (
           <>
-            <p className="text-light font-medium mb-2">拖拽文件到这里</p>
-            <p className="text-light/60 text-sm">或点击选择文件</p>
-            <p className="text-light/40 text-xs mt-2">支持 PDF, TXT, DOCX (最大 10MB)</p>
+            <p className="text-gray-700 font-medium mb-2">拖拽文件到这里</p>
+            <p className="text-gray-500 text-sm">或点击选择文件</p>
+            <p className="text-gray-400 text-xs mt-2">支持 PDF, TXT, DOCX (最大 10MB)</p>
           </>
         )}
       </div>
@@ -93,21 +144,21 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="flex items-center gap-3 p-3 bg-dark-secondary rounded-xl border border-dark/10"
+                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200"
               >
-                <File className="w-4 h-4 text-light/60 flex-shrink-0" />
+                <File className="w-4 h-4 text-gray-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-light truncate">{file.name}</p>
-                  <p className="text-xs text-light/40">
+                  <p className="text-sm text-gray-800 truncate">{file.name}</p>
+                  <p className="text-xs text-gray-400">
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
                 {!uploading && (
                   <button
                     onClick={() => removeFile(index)}
-                    className="p-1 hover:bg-dark/20 rounded-lg transition-colors"
+                    className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
                   >
-                    <X className="w-4 h-4 text-light/60" />
+                    <X className="w-4 h-4 text-gray-500" />
                   </button>
                 )}
               </motion.div>
@@ -133,8 +184,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               onClick={handleUpload}
               disabled={uploading}
               className={cn(
-                'w-full py-3 px-4 bg-light text-dark rounded-xl font-medium transition-all',
-                'hover:bg-light/90 disabled:opacity-50 disabled:cursor-not-allowed',
+                'w-full py-3 px-4 bg-gray-800 text-white rounded-xl font-medium transition-all',
+                'hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed',
                 'flex items-center justify-center gap-2'
               )}
             >

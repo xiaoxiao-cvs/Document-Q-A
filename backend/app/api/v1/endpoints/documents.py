@@ -3,11 +3,12 @@
 
 提供文档上传、列表、删除等接口。
 """
+import asyncio
 import os
 from typing import List
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
 from app.crud import document as document_crud
@@ -20,6 +21,7 @@ from app.schemas.document import (
 )
 from app.services.doc_service import document_service
 from app.services.vector_service import vector_service
+from app.services.thumbnail_service import thumbnail_service
 
 # 创建路由器
 router = APIRouter(prefix="/documents", tags=["文档管理"])
@@ -95,6 +97,11 @@ async def upload_document(
                 db, db_document.id,
                 DocumentUpdate(error_message=f"向量化失败: {str(e)}")
             )
+    
+    # 异步生成缩略图（后台任务，不阻塞上传响应）
+    asyncio.create_task(
+        thumbnail_service.generate_thumbnail_async(db_document.id, filepath)
+    )
     
     # 刷新文档状态
     db.refresh(db_document)
@@ -174,6 +181,9 @@ async def delete_document(
     # 删除向量
     vector_service.delete_document_vectors(doc_id)
     
+    # 删除缩略图缓存
+    thumbnail_service.delete_thumbnail_cache(doc_id)
+    
     # 删除文件
     document_service.delete_file(db_document.filepath)
     
@@ -247,4 +257,56 @@ async def get_document_file(
         path=db_document.filepath,
         filename=db_document.filename,
         media_type="application/pdf"
+    )
+
+
+@router.get(
+    "/{doc_id}/thumbnail",
+    summary="获取文档缩略图",
+    description="获取指定文档的 PDF 首页缩略图"
+)
+async def get_document_thumbnail(
+    doc_id: int,
+    db: Session = Depends(get_db)
+) -> Response:
+    """
+    获取文档缩略图
+    
+    - **doc_id**: 文档 ID
+    
+    返回 PNG 格式的缩略图。如果缩略图未生成，会实时生成。
+    """
+    db_document = document_crud.get_document(db, doc_id)
+    if db_document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"文档 ID {doc_id} 不存在"
+        )
+    
+    # 检查文件是否存在
+    if not os.path.exists(db_document.filepath):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="文件不存在或已被删除"
+        )
+    
+    # 获取或生成缩略图
+    thumbnail_data = thumbnail_service.get_or_generate_thumbnail(
+        doc_id, 
+        db_document.filepath
+    )
+    
+    if thumbnail_data is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="生成缩略图失败"
+        )
+    
+    return Response(
+        content=thumbnail_data,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=86400",  # 缓存 24 小时
+            "Content-Disposition": f"inline; filename={doc_id}_thumbnail.png"
+        }
     )

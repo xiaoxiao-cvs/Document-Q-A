@@ -5,13 +5,13 @@
 """
 import json
 import uuid
-from typing import AsyncGenerator, List, Optional, Tuple
+from typing import AsyncGenerator, Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.crud import chat as chat_crud
-from app.schemas.chat import ChatMessageCreate, ChatRequest, ChatResponse, SourceInfo
+from app.schemas.chat import ChatMessageCreate, ChatRequest, ChatResponse, SourceInfo, TokenUsage
 from app.services.vector_service import vector_service
 
 
@@ -105,7 +105,7 @@ class ChatService:
         
         return messages
     
-    async def _call_llm(self, messages: List[dict]) -> str:
+    async def _call_llm(self, messages: List[dict]) -> Tuple[str, Optional[TokenUsage]]:
         """
         调用 LLM API 获取回答
         
@@ -113,13 +113,20 @@ class ChatService:
             messages: 对话消息列表
             
         Returns:
-            str: LLM 生成的回答
+            Tuple[str, Optional[TokenUsage]]: (回答内容, Token用量)
         """
         # 这里使用 OpenAI SDK 调用 LLM
         # 如果没有配置 API Key，返回模拟回答
         if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "your_api_key_here":
             # 返回模拟回答，用于测试
-            return self._generate_mock_response(messages)
+            mock_response = self._generate_mock_response(messages)
+            # 模拟 token 用量（粗略估算）
+            mock_usage = TokenUsage(
+                prompt_tokens=len(str(messages)) // 4,
+                completion_tokens=len(mock_response) // 4,
+                total_tokens=(len(str(messages)) + len(mock_response)) // 4
+            )
+            return mock_response, mock_usage
         
         try:
             from openai import AsyncOpenAI
@@ -136,12 +143,21 @@ class ChatService:
                 max_tokens=1000
             )
             
-            return response.choices[0].message.content
+            # 提取 token 用量
+            usage = None
+            if response.usage:
+                usage = TokenUsage(
+                    prompt_tokens=response.usage.prompt_tokens,
+                    completion_tokens=response.usage.completion_tokens,
+                    total_tokens=response.usage.total_tokens
+                )
+            
+            return response.choices[0].message.content, usage
             
         except Exception as e:
-            return f"调用 LLM 时发生错误: {str(e)}"
+            return f"调用 LLM 时发生错误: {str(e)}", None
     
-    async def _call_llm_stream(self, messages: List[dict]) -> AsyncGenerator[str, None]:
+    async def _call_llm_stream(self, messages: List[dict]) -> AsyncGenerator[Tuple[str, Optional[Dict]], None]:
         """
         流式调用 LLM API 获取回答
         
@@ -149,13 +165,20 @@ class ChatService:
             messages: 对话消息列表
             
         Yields:
-            str: LLM 生成的回答片段
+            Tuple[str, Optional[Dict]]: (回答片段, Token用量) - usage 只在最后一次 yield 中有值
         """
         if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "your_api_key_here":
             # 返回模拟回答，用于测试
             mock_response = self._generate_mock_response(messages)
             for char in mock_response:
-                yield char
+                yield char, None
+            # 最后 yield 模拟的 token 用量
+            mock_usage = {
+                "prompt_tokens": len(str(messages)) // 4,
+                "completion_tokens": len(mock_response) // 4,
+                "total_tokens": (len(str(messages)) + len(mock_response)) // 4
+            }
+            yield "", mock_usage
             return
         
         try:
@@ -171,15 +194,26 @@ class ChatService:
                 messages=messages,
                 temperature=0.7,
                 max_tokens=1000,
-                stream=True
+                stream=True,
+                stream_options={"include_usage": True}
             )
             
             async for chunk in stream:
-                if chunk.choices[0].delta.content:
-                    yield chunk.choices[0].delta.content
+                # 内容片段
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content, None
+                
+                # 最后一个 chunk 包含 usage
+                if hasattr(chunk, 'usage') and chunk.usage:
+                    usage = {
+                        "prompt_tokens": chunk.usage.prompt_tokens,
+                        "completion_tokens": chunk.usage.completion_tokens,
+                        "total_tokens": chunk.usage.total_tokens
+                    }
+                    yield "", usage
                     
         except Exception as e:
-            yield f"调用 LLM 时发生错误: {str(e)}"
+            yield f"调用 LLM 时发生错误: {str(e)}", None
     
     def _generate_mock_response(self, messages: List[dict]) -> str:
         """
@@ -268,7 +302,7 @@ class ChatService:
         
         # --- 步骤 3: 生成 (Generate) ---
         # 调用 LLM 获取回答
-        answer = await self._call_llm(messages)
+        answer, usage = await self._call_llm(messages)
         
         # --- 步骤 4: 记录 ---
         # 保存用户消息到数据库
@@ -298,7 +332,8 @@ class ChatService:
             answer=answer,
             sources=sources,
             session_id=session_id,
-            query=question
+            query=question,
+            usage=usage
         )
     
     async def chat_stream(
@@ -347,9 +382,13 @@ class ChatService:
         
         # --- 步骤 3: 流式生成 (Generate) ---
         full_answer = ""
-        async for chunk in self._call_llm_stream(messages):
-            full_answer += chunk
-            yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
+        final_usage = None
+        async for chunk, usage in self._call_llm_stream(messages):
+            if chunk:
+                full_answer += chunk
+                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
+            if usage:
+                final_usage = usage
         
         # --- 步骤 4: 记录 ---
         # 保存用户消息到数据库
@@ -375,8 +414,11 @@ class ChatService:
             )
         )
         
-        # 发送完成标记
-        yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
+        # 发送完成标记（包含 token 用量）
+        done_data = {'type': 'done'}
+        if final_usage:
+            done_data['usage'] = final_usage
+        yield f"data: {json.dumps(done_data, ensure_ascii=False)}\n\n"
 
 
 # 创建全局服务实例

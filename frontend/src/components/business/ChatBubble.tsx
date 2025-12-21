@@ -22,8 +22,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onSourceClick }
     >
       {/* Avatar */}
       {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-dark flex items-center justify-center">
-          <Bot className="w-5 h-5 text-light" />
+        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-gray-800 flex items-center justify-center">
+          <Bot className="w-5 h-5 text-white" />
         </div>
       )}
 
@@ -33,8 +33,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onSourceClick }
           className={`
             px-4 py-3 rounded-2xl
             ${isUser
-              ? 'bg-dark text-light rounded-tr-sm'
-              : 'bg-white text-dark rounded-tl-sm border border-gray-200'
+              ? 'bg-gray-800 text-white rounded-tr-sm'
+              : 'bg-gray-50 text-gray-800 rounded-tl-sm border border-gray-200'
             }
           `}
         >
@@ -80,8 +80,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onSourceClick }
 
       {/* User Avatar */}
       {isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-dark flex items-center justify-center">
-          <User className="w-5 h-5 text-light" />
+        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-gray-800 flex items-center justify-center">
+          <User className="w-5 h-5 text-white" />
         </div>
       )}
     </motion.div>

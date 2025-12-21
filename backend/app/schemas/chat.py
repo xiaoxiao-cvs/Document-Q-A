@@ -56,6 +56,17 @@ class ChatRequest(BaseModel):
         populate_by_name = True
 
 
+class TokenUsage(BaseModel):
+    """
+    Token 用量信息
+    
+    用于追踪 LLM 调用的 token 消耗。
+    """
+    prompt_tokens: int = Field(0, description="输入 token 数")
+    completion_tokens: int = Field(0, description="输出 token 数")
+    total_tokens: int = Field(0, description="总 token 数")
+
+
 class ChatResponse(BaseModel):
     """
     聊天响应模式
@@ -66,6 +77,7 @@ class ChatResponse(BaseModel):
     sources: List[SourceInfo] = Field(default_factory=list, description="引用来源列表")
     session_id: Optional[str] = Field(None, description="会话ID")
     query: Optional[str] = Field(None, description="原始问题")
+    usage: Optional[TokenUsage] = Field(None, description="Token 用量信息")
 
 
 class ChatMessageBase(BaseModel):
