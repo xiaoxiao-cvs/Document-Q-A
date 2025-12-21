@@ -4,6 +4,14 @@
 基于 FastAPI 构建的文档问答机器人原型系统。
 """
 import os
+import sys
+
+# 支持直接右键运行：在导入本地模块前设置好路径
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_backend_dir = os.path.dirname(_current_dir)
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -200,13 +208,36 @@ async def health_check():
     }
 
 
-# 直接运行时启动服务器
+# 直接运行时启动服务器（支持右键直接运行 + 热更新）
 if __name__ == "__main__":
+    import signal
     import uvicorn
     
-    uvicorn.run(
+    # 切换工作目录到 backend，确保相对路径正确
+    os.chdir(_backend_dir)
+    
+    print(f"启动服务器...")
+    print(f"工作目录: {os.getcwd()}")
+    print(f"API 文档: http://{settings.HOST}:{settings.PORT}/docs")
+    print(f"按 Ctrl+C 优雅退出")
+    
+    # 配置 uvicorn
+    config = uvicorn.Config(
         "app.main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.DEBUG
+        reload=settings.DEBUG,
+        reload_dirs=[_backend_dir] if settings.DEBUG else None,
     )
+    server = uvicorn.Server(config)
+    
+    # 优雅退出处理
+    def handle_exit(signum, frame):
+        print("\n正在优雅退出...")
+        server.should_exit = True
+    
+    signal.signal(signal.SIGINT, handle_exit)
+    signal.signal(signal.SIGTERM, handle_exit)
+    
+    # 启动服务器
+    server.run()
