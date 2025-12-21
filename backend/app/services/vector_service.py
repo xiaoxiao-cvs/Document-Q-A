@@ -80,12 +80,45 @@ class VectorService:
         """
         if self._collection is None:
             embedding_fn = self._get_embedding_function()
-            self._collection = self.client.get_or_create_collection(
-                name=settings.CHROMA_COLLECTION_NAME,
-                metadata={"hnsw:space": "cosine"},  # 使用余弦相似度
-                embedding_function=embedding_fn
-            )
+            try:
+                self._collection = self.client.get_or_create_collection(
+                    name=settings.CHROMA_COLLECTION_NAME,
+                    metadata={"hnsw:space": "cosine"},  # 使用余弦相似度
+                    embedding_function=embedding_fn
+                )
+            except Exception as e:
+                # 如果出现维度不匹配等错误，删除旧集合并重建
+                print(f"⚠ 集合初始化失败，尝试重建: {e}")
+                try:
+                    self.client.delete_collection(settings.CHROMA_COLLECTION_NAME)
+                    print(f"✓ 已删除旧集合 {settings.CHROMA_COLLECTION_NAME}")
+                except Exception:
+                    pass
+                self._collection = self.client.get_or_create_collection(
+                    name=settings.CHROMA_COLLECTION_NAME,
+                    metadata={"hnsw:space": "cosine"},
+                    embedding_function=embedding_fn
+                )
+                print(f"✓ 已重建集合 {settings.CHROMA_COLLECTION_NAME}")
         return self._collection
+    
+    def reset_collection(self):
+        """
+        重置集合（删除并重建）
+        
+        用于处理嵌入模型变更导致的维度不匹配问题。
+        """
+        try:
+            self.client.delete_collection(settings.CHROMA_COLLECTION_NAME)
+            print(f"✓ 已删除集合 {settings.CHROMA_COLLECTION_NAME}")
+        except Exception as e:
+            print(f"⚠ 删除集合失败: {e}")
+        
+        self._collection = None
+        self._embedding_function = None
+        # 触发重建
+        _ = self.collection
+        print(f"✓ 集合已重置")
     
     def add_documents(
         self, 

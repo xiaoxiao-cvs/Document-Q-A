@@ -175,10 +175,33 @@ function processSSELine(
   if (trimmed.startsWith('data: ')) {
     const data = trimmed.slice(6)
     
-    // 检查是否是 JSON 格式的 sources 数据
-    if (data.startsWith('{') || data.startsWith('[')) {
+    // 尝试解析 JSON 格式的数据
+    if (data.startsWith('{')) {
       try {
         const parsed = JSON.parse(data)
+        
+        // 处理不同类型的消息
+        if (parsed.type === 'chunk' && parsed.content !== undefined) {
+          // 内容片段
+          onChunk(parsed.content)
+          return
+        }
+        if (parsed.type === 'sources' && Array.isArray(parsed.sources)) {
+          // 来源信息
+          onSources?.(parsed.sources)
+          return
+        }
+        if (parsed.type === 'done') {
+          // 完成标记
+          return
+        }
+        if (parsed.type === 'error') {
+          // 错误信息
+          onChunk(parsed.message || '发生错误')
+          return
+        }
+        
+        // 兼容旧格式
         if (parsed.sources && Array.isArray(parsed.sources)) {
           onSources?.(parsed.sources)
           return

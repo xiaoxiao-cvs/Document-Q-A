@@ -3,9 +3,11 @@
 
 提供聊天问答接口。
 """
+import json
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.crud import chat as chat_crud
@@ -47,6 +49,44 @@ async def chat(
     try:
         response = await chat_service.chat(db, request)
         return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"处理问题时发生错误: {str(e)}"
+        )
+
+
+@router.post(
+    "/stream",
+    summary="流式发送提问",
+    description="向系统发送问题，以 SSE 流式方式获取回答"
+)
+async def chat_stream(
+    request: ChatRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    流式发送提问并获取回答
+    
+    - **question**: 用户的问题（必填）
+    - **doc_id**: 指定在哪个文档中搜索（可选）
+    - **session_id**: 会话 ID（可选）
+    
+    返回 SSE 格式的流式响应：
+    - data: {"type": "chunk", "content": "..."}  - 内容片段
+    - data: {"type": "sources", "sources": [...]} - 来源信息
+    - data: {"type": "done"} - 完成标记
+    """
+    try:
+        return StreamingResponse(
+            chat_service.chat_stream(db, request),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            }
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

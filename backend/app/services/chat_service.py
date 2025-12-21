@@ -5,7 +5,7 @@
 """
 import json
 import uuid
-from typing import List, Optional, Tuple
+from typing import AsyncGenerator, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -141,6 +141,46 @@ class ChatService:
         except Exception as e:
             return f"调用 LLM 时发生错误: {str(e)}"
     
+    async def _call_llm_stream(self, messages: List[dict]) -> AsyncGenerator[str, None]:
+        """
+        流式调用 LLM API 获取回答
+        
+        Args:
+            messages: 对话消息列表
+            
+        Yields:
+            str: LLM 生成的回答片段
+        """
+        if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "your_api_key_here":
+            # 返回模拟回答，用于测试
+            mock_response = self._generate_mock_response(messages)
+            for char in mock_response:
+                yield char
+            return
+        
+        try:
+            from openai import AsyncOpenAI
+            
+            client = AsyncOpenAI(
+                api_key=settings.OPENAI_API_KEY,
+                base_url=settings.OPENAI_API_BASE if settings.OPENAI_API_BASE else None
+            )
+            
+            stream = await client.chat.completions.create(
+                model=settings.LLM_MODEL,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1000,
+                stream=True
+            )
+            
+            async for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+                    
+        except Exception as e:
+            yield f"调用 LLM 时发生错误: {str(e)}"
+    
     def _generate_mock_response(self, messages: List[dict]) -> str:
         """
         生成模拟回答（用于测试或无 API Key 时）
@@ -260,6 +300,83 @@ class ChatService:
             session_id=session_id,
             query=question
         )
+    
+    async def chat_stream(
+        self, 
+        db: Session, 
+        request: ChatRequest
+    ) -> AsyncGenerator[str, None]:
+        """
+        流式处理用户提问并返回回答 (RAG 核心流程)
+        
+        Args:
+            db: 数据库会话
+            request: 聊天请求
+            
+        Yields:
+            str: SSE 格式的响应数据
+        """
+        # 获取问题内容
+        question = request.get_question
+        if not question:
+            yield f"data: {json.dumps({'type': 'error', 'message': '请提供一个问题'}, ensure_ascii=False)}\n\n"
+            return
+        
+        # 确定会话ID
+        session_id = request.session_id or self.generate_session_id()
+        
+        # 获取文档ID列表
+        doc_ids = request.get_doc_ids
+        doc_id = doc_ids[0] if doc_ids else None
+        top_k = request.top_k or settings.TOP_K_RESULTS
+        
+        # --- 步骤 1: 检索 (Retrieve) ---
+        search_results = vector_service.search(
+            query=question,
+            doc_id=doc_id,
+            top_k=top_k
+        )
+        
+        # --- 步骤 2: 增强 (Augment) ---
+        context, sources = self._build_context(search_results)
+        messages = self._build_prompt(context, question)
+        
+        # 发送来源信息
+        sources_data = [s.model_dump(by_alias=True) for s in sources]
+        yield f"data: {json.dumps({'type': 'sources', 'sources': sources_data, 'session_id': session_id}, ensure_ascii=False)}\n\n"
+        
+        # --- 步骤 3: 流式生成 (Generate) ---
+        full_answer = ""
+        async for chunk in self._call_llm_stream(messages):
+            full_answer += chunk
+            yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
+        
+        # --- 步骤 4: 记录 ---
+        # 保存用户消息到数据库
+        chat_crud.create_chat_message(
+            db,
+            ChatMessageCreate(
+                session_id=session_id,
+                role="user",
+                content=question,
+                doc_id=doc_id
+            )
+        )
+        
+        # 保存 AI 回答到数据库
+        chat_crud.create_chat_message(
+            db,
+            ChatMessageCreate(
+                session_id=session_id,
+                role="assistant",
+                content=full_answer,
+                doc_id=doc_id,
+                sources=json.dumps(sources_data, ensure_ascii=False) if sources else None
+            )
+        )
+        
+        # 发送完成标记
+        yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
 
 
 # 创建全局服务实例

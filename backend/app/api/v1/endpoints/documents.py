@@ -3,9 +3,11 @@
 
 提供文档上传、列表、删除等接口。
 """
+import os
 from typing import List
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.crud import document as document_crud
@@ -208,4 +210,41 @@ async def get_document(
         filename=db_document.filename,
         upload_time=db_document.upload_time,
         status=db_document.status
+    )
+
+
+@router.get(
+    "/{doc_id}/file",
+    summary="获取文档文件",
+    description="下载或预览指定文档的 PDF 文件"
+)
+async def get_document_file(
+    doc_id: int,
+    db: Session = Depends(get_db)
+) -> FileResponse:
+    """
+    获取文档 PDF 文件
+    
+    - **doc_id**: 文档 ID
+    
+    返回 PDF 文件，可用于预览或下载。
+    """
+    db_document = document_crud.get_document(db, doc_id)
+    if db_document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"文档 ID {doc_id} 不存在"
+        )
+    
+    # 检查文件是否存在
+    if not os.path.exists(db_document.filepath):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="文件不存在或已被删除"
+        )
+    
+    return FileResponse(
+        path=db_document.filepath,
+        filename=db_document.filename,
+        media_type="application/pdf"
     )
