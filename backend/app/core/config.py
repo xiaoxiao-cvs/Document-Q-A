@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     # LLM / OpenAI 配置
     OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API 密钥")
     OPENAI_API_BASE: Optional[str] = Field(default=None, description="OpenAI API 基础URL")
-    LLM_MODEL: str = Field(default="gpt-3.5-turbo", description="使用的LLM模型名称")
-    EMBEDDING_MODEL: str = Field(default="text-embedding-ada-002", description="嵌入模型名称")
+    LLM_MODEL: str = Field(default="qwen3-max-preview", description="使用的LLM模型名称")
+    EMBEDDING_MODEL: str = Field(default="Qwen/Qwen3-Embedding-8B", description="嵌入模型名称")
     
     # 向量数据库配置
     CHROMA_PERSIST_DIRECTORY: str = Field(

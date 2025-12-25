@@ -51,8 +51,8 @@ async def lifespan(app: FastAPI):
         default_config = {
             "api_base": None,
             "api_key": None,
-            "model": "gpt-3.5-turbo",
-            "embedding_model": "text-embedding-ada-002"
+            "model": "qwen3-max-preview",
+            "embedding_model": "Qwen/Qwen3-Embedding-8B"
         }
         with open(llm_config_file, "w", encoding="utf-8") as f:
             json.dump(default_config, f, indent=2, ensure_ascii=False)
