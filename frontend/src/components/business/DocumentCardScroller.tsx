@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback, ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { FileText, Clock, Layers, ChevronLeft, ChevronRight, X, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { FileText, Clock, Layers, ChevronLeft, ChevronRight, X, Loader2, AlertCircle } from 'lucide-react'
 import { Document } from '@/types'
 import { documentsApi } from '@/api'
 import { formatFileSize, formatDateTime } from '@/lib/utils'
