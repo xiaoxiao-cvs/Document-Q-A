@@ -38,9 +38,25 @@ async def lifespan(app: FastAPI):
     
     # 确保数据目录存在
     from app.core.config import DATA_DIR
+    from pathlib import Path
+    import json
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+    os.makedirs(Path(DATA_DIR) / "thumbnails", exist_ok=True)
+    
+    # 创建默认的 LLM 配置文件（如果不存在）
+    llm_config_file = Path(DATA_DIR) / "llm_config.json"
+    if not llm_config_file.exists():
+        default_config = {
+            "api_base": None,
+            "api_key": None,
+            "model": "gpt-3.5-turbo",
+            "embedding_model": "text-embedding-ada-002"
+        }
+        with open(llm_config_file, "w", encoding="utf-8") as f:
+            json.dump(default_config, f, indent=2, ensure_ascii=False)
+        print(" 已创建默认 LLM 配置文件")
     
     # 初始化数据库
     init_db()
@@ -214,8 +230,11 @@ if __name__ == "__main__":
     import signal
     import uvicorn
     
-    # 切换工作目录到 backend，确保相对路径正确
-    os.chdir(_backend_dir)
+    # 确保工作目录正确
+    # 在打包环境下，不切换到 backend 目录，使用当前目录
+    if not getattr(sys, 'frozen', False):
+        # 开发环境：切换到 backend 目录
+        os.chdir(_backend_dir)
     
     print(f"启动服务器...")
     print(f"工作目录: {os.getcwd()}")
@@ -223,13 +242,24 @@ if __name__ == "__main__":
     print(f"按 Ctrl+C 优雅退出")
     
     # 配置 uvicorn
-    config = uvicorn.Config(
-        "app.main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-        reload_dirs=[_backend_dir] if settings.DEBUG else None,
-    )
+    # 在打包环境下直接传递 app 对象，而不是字符串
+    if getattr(sys, 'frozen', False):
+        # 生产环境：直接使用 app 对象
+        config = uvicorn.Config(
+            app,
+            host=settings.HOST,
+            port=settings.PORT,
+            log_level="info",
+        )
+    else:
+        # 开发环境：使用字符串以支持热重载
+        config = uvicorn.Config(
+            "app.main:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=settings.DEBUG,
+            reload_dirs=[_backend_dir] if settings.DEBUG else None,
+        )
     server = uvicorn.Server(config)
     
     # 优雅退出处理

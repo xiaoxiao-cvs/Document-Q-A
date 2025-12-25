@@ -2,7 +2,9 @@ import axios from 'axios'
 import { Document, ChatRequest, ChatResponse, UploadResponse, Source, TokenUsage } from '@/types'
 
 // API 基础路径从环境变量读取
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+// 生产环境下使用完整 URL，开发环境使用相对路径通过代理
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD ? 'http://localhost:12345/api' : '/api')
 
 const api = axios.create({
   baseURL: API_BASE_URL,

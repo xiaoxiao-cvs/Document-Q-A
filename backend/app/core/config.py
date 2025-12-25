@@ -4,6 +4,7 @@
 用于管理应用程序的所有配置项，通过环境变量加载敏感信息。
 """
 import os
+import sys
 from pathlib import Path
 from typing import List, Optional
 
@@ -11,7 +12,20 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 # 获取backend目录的绝对路径
-BACKEND_DIR = Path(__file__).parent.parent.parent.resolve()
+# 在生产环境（打包后）使用用户数据目录，开发环境使用项目目录
+if getattr(sys, 'frozen', False):
+    # 生产环境：打包后的应用
+    # 使用用户数据目录存储数据
+    if sys.platform == "win32":
+        BACKEND_DIR = Path(os.environ.get('APPDATA', Path.home())) / "Document-QA"
+    elif sys.platform == "darwin":
+        BACKEND_DIR = Path.home() / "Library" / "Application Support" / "Document-QA"
+    else:
+        BACKEND_DIR = Path.home() / ".document-qa"
+else:
+    # 开发环境：使用项目目录
+    BACKEND_DIR = Path(__file__).parent.parent.parent.resolve()
+
 DATA_DIR = BACKEND_DIR / "data"
 
 
@@ -28,7 +42,7 @@ class Settings(BaseSettings):
     
     # 服务器配置
     HOST: str = Field(default="0.0.0.0", description="服务器主机地址")
-    PORT: int = Field(default=8000, description="服务器端口号")
+    PORT: int = Field(default=12345, description="服务器端口号")
     DEBUG: bool = Field(default=True, description="是否启用调试模式")
     
     # 数据库配置
@@ -76,6 +90,9 @@ class Settings(BaseSettings):
             "http://localhost:5173",
             "http://127.0.0.1:3000",
             "http://127.0.0.1:5173",
+            "tauri://localhost",  # Tauri 应用
+            "http://tauri.localhost",  # Tauri 备用协议
+            "https://tauri.localhost",  # Tauri HTTPS
         ],
         description="允许的CORS源列表"
     )

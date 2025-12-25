@@ -37,8 +37,37 @@ pub fn run() {
 
             #[cfg(not(debug_assertions))]
             {
+                use std::path::PathBuf;
+                
                 log::info!("生产模式：启动打包的后端服务");
-                let sidecar = shell.sidecar("backend").expect("无法找到后端可执行文件");
+                
+                // 获取用户数据目录
+                let data_dir = if cfg!(target_os = "windows") {
+                    let appdata = std::env::var("APPDATA").unwrap_or_else(|_| {
+                        dirs::home_dir()
+                            .unwrap()
+                            .join("AppData\\Roaming")
+                            .to_string_lossy()
+                            .to_string()
+                    });
+                    PathBuf::from(appdata).join("Document-QA")
+                } else if cfg!(target_os = "macos") {
+                    dirs::home_dir()
+                        .unwrap()
+                        .join("Library")
+                        .join("Application Support")
+                        .join("Document-QA")
+                } else {
+                    dirs::home_dir().unwrap().join(".document-qa")
+                };
+                
+                // 确保目录存在
+                std::fs::create_dir_all(&data_dir).ok();
+                
+                let sidecar = shell
+                    .sidecar("backend")
+                    .expect("无法找到后端可执行文件")
+                    .current_dir(data_dir);
                 
                 match sidecar.spawn() {
                     Ok((mut rx, child)) => {
