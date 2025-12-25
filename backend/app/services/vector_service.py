@@ -40,15 +40,20 @@ class VectorService:
         否则使用 ChromaDB 默认的嵌入模型。
         """
         if self._embedding_function is None:
-            if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "your_api_key_here":
+            # 从配置文件或环境变量获取有效配置
+            from app.api.v1.endpoints.settings import get_effective_config
+            config = get_effective_config()
+            api_key = config.get("api_key")
+            
+            if api_key and api_key != "your_api_key_here":
                 try:
                     from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
                     self._embedding_function = OpenAIEmbeddingFunction(
-                        api_key=settings.OPENAI_API_KEY,
-                        api_base=settings.OPENAI_API_BASE,
-                        model_name=settings.EMBEDDING_MODEL
+                        api_key=api_key,
+                        api_base=config.get("api_base"),
+                        model_name=config.get("embedding_model", "text-embedding-ada-002")
                     )
-                    print(f"✓ 使用 OpenAI Embedding 模型: {settings.EMBEDDING_MODEL}")
+                    print(f"✓ 使用 OpenAI Embedding 模型: {config.get('embedding_model')}")
                 except Exception as e:
                     print(f"⚠ OpenAI Embedding 初始化失败，使用默认嵌入: {e}")
                     self._embedding_function = None
@@ -101,6 +106,15 @@ class VectorService:
                 )
                 print(f"✓ 已重建集合 {settings.CHROMA_COLLECTION_NAME}")
         return self._collection
+    
+    def reload_config(self):
+        """
+        重新加载配置
+        
+        当配置更新时，清除缓存的嵌入函数以便重新读取配置。
+        """
+        self._embedding_function = None
+        print("✓ 配置已重新加载")
     
     def reset_collection(self):
         """

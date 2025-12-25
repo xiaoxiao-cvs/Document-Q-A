@@ -16,6 +16,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,6 +55,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setSaving(true)
     setError(null)
     setTestResult(null)
+    setSaveSuccess(false)
     try {
       const updateData: LLMConfigUpdate = {
         api_base: apiBase || null,
@@ -67,6 +69,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       const data = await settingsApi.updateLLMConfig(updateData)
       setConfig(data)
       setApiKey('') // 清空输入的密钥
+      setSaveSuccess(true)
+      // 3秒后自动隐藏成功提示
+      setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
       setError('保存配置失败')
       console.error(err)
@@ -220,6 +225,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                 {error}
+              </div>
+            )}
+
+            {/* Save Success Message */}
+            {saveSuccess && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                保存配置成功！
               </div>
             )}
 

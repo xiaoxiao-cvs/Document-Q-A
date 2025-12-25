@@ -123,6 +123,13 @@ async def update_llm_config(request: LLMConfigRequest) -> LLMConfigResponse:
     # 保存配置
     _save_config(config)
     
+    # 重新加载向量服务的配置
+    try:
+        from app.services.vector_service import vector_service
+        vector_service.reload_config()
+    except Exception as e:
+        print(f"⚠ 重新加载向量服务配置失败: {e}")
+    
     # 返回更新后的配置
     effective_config = get_effective_config()
     api_key = effective_config.get("api_key")
