@@ -146,3 +146,13 @@ coverage/
 .nyc_output/
 backend/data
 data
+
+# ====================
+# Tauri
+# ====================
+# Tauri build outputs
+frontend/src-tauri/target/
+frontend/src-tauri/binaries/
+
+# Tauri Cargo.lock (optional, uncomment if needed)
+# frontend/src-tauri/Cargo.lock
