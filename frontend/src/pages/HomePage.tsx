@@ -5,7 +5,9 @@ import { FileText, Brain, Search, MessageSquare, Sparkles, Settings } from 'luci
 import { UploadZone } from '@/components/business/UploadZone'
 import { DocumentCardScroller } from '@/components/business/DocumentCardScroller'
 import { SettingsModal } from '@/components/business/SettingsModal'
+import { Toast } from '@/components/ui/Toast'
 import { useDocuments } from '@/hooks/useDocuments'
+import { useAppStore } from '@/store'
 
 const features = [
   {
@@ -32,7 +34,8 @@ const features = [
 
 export const HomePage = () => {
   const navigate = useNavigate()
-  const { uploadFiles, isUploading, uploadProgress, documents } = useDocuments()
+  const { uploadFiles, isUploading, uploadProgress, documents, deleteDocument } = useDocuments()
+  const { toast, hideToast, showToast } = useAppStore()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const handleUpload = async (files: File[]) => {
@@ -43,8 +46,26 @@ export const HomePage = () => {
     navigate(`/chat/${documentId}`)
   }
 
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      await deleteDocument(documentId)
+      showToast('文档已删除', 'success')
+    } catch (error) {
+      console.error('删除文档失败:', error)
+      showToast('删除文档失败，请重试', 'error')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isOpen={toast.isOpen}
+        onClose={hideToast}
+      />
+      
       {/* Settings Modal */}
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       
@@ -144,6 +165,7 @@ export const HomePage = () => {
                 <DocumentCardScroller
                   documents={documents}
                   onDocumentClick={handleDocumentClick}
+                  onDelete={handleDeleteDocument}
                   uploadSlot={
                     <UploadZone
                       onUpload={handleUpload}

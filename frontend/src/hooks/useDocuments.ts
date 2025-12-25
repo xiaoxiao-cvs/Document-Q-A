@@ -21,6 +21,7 @@ export const useDocuments = () => {
     setUploadProgress,
     setPdfUrl,
     clearHighlightAreas,
+    showToast,
   } = useAppStore()
 
   // Fetch all documents
@@ -66,9 +67,15 @@ export const useDocuments = () => {
       }
       
       setUploadProgress(100)
+      
+      // 显示上传完成提示
+      const fileText = files.length > 1 ? `${files.length} 个文件` : files[0].name
+      showToast(`${fileText} 上传成功！正在后台处理文档切片和向量化...`, 'success')
+      
       return results
     } catch (error) {
       console.error('Failed to upload files:', error)
+      showToast('上传失败，请重试', 'error')
       throw error
     } finally {
       setIsUploading(false)

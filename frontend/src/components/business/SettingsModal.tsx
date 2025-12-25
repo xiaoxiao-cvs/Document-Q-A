@@ -123,7 +123,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <>
             {/* API Base URL */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-gray-700">
                 API 地址 (Base URL)
               </label>
               <Input
@@ -139,7 +139,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
             {/* API Key */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-gray-700">
                 API 密钥 (Key)
               </label>
               <div className="relative">
@@ -167,7 +167,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
             {/* Model */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-gray-700">
                 对话模型 (Model)
               </label>
               <div className="flex gap-2">
@@ -179,7 +179,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   className="flex-1"
                 />
                 <select
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
                   value=""
                   onChange={(e) => e.target.value && setModel(e.target.value)}
                 >
@@ -195,7 +195,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
             {/* Embedding Model */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-gray-700">
                 嵌入模型 (Embedding Model)
               </label>
               <div className="flex gap-2">
@@ -207,7 +207,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   className="flex-1"
                 />
                 <select
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-600"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
                   value=""
                   onChange={(e) => e.target.value && setEmbeddingModel(e.target.value)}
                 >

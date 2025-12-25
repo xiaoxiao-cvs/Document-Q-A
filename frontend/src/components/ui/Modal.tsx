@@ -48,18 +48,18 @@ export const Modal: React.FC<ModalProps> = ({
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', duration: 0.3 }}
               className={cn(
-                'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-hidden',
+                'bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-hidden',
                 sizeClasses[size],
                 className
               )}
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between p-6 border-b border-light-secondary dark:border-gray-700">
-                  <h2 className="text-xl font-semibold text-dark dark:text-white">{title}</h2>
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
                   <button
                     onClick={onClose}
-                    className="p-1 rounded-lg hover:bg-light-secondary dark:hover:bg-gray-700 transition-colors"
+                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>

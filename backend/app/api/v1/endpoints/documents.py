@@ -80,41 +80,74 @@ async def upload_document(
     )
     db_document = document_crud.create_document(db, doc_data)
     
-    # 异步处理文档（提取文本、切片、向量化）
-    success, message, chunk_count = await document_service.process_document(
-        db, db_document.id, filepath
-    )
-    
-    if success:
-        # 获取切片并添加到向量数据库
-        try:
-            text, _ = document_service.extract_text_from_pdf(filepath)
-            chunks = document_service.chunk_text(text)
-            vector_service.add_documents(db_document.id, chunks)
-        except Exception as e:
-            # 向量化失败，更新状态但不影响整体流程
-            document_crud.update_document(
-                db, db_document.id,
-                DocumentUpdate(error_message=f"向量化失败: {str(e)}")
-            )
-    
-    # 异步生成缩略图（后台任务，不阻塞上传响应）
-    asyncio.create_task(
-        thumbnail_service.generate_thumbnail_async(db_document.id, filepath)
-    )
-    
-    # 刷新文档状态
-    db.refresh(db_document)
-    
-    return UploadResponse(
+    # 立即返回上传成功响应，文档处理在后台进行
+    response = UploadResponse(
         id=db_document.id,
         filename=db_document.filename,
         file_size=db_document.file_size,
         upload_time=db_document.upload_time,
         status=db_document.status,
-        chunk_count=db_document.chunk_count,
-        message=message if success else f"处理失败: {message}"
+        chunk_count=0,  # 初始为0，处理完成后更新
+        message="文件上传成功，正在后台处理..."
     )
+    
+    # 启动后台任务处理文档（异步，不阻塞响应）
+    asyncio.create_task(
+        process_document_background(db_document.id, filepath)
+    )
+    
+    return response
+
+
+async def process_document_background(doc_id: int, filepath: str):
+    """
+    后台异步处理文档
+    
+    包括：文本提取、切片、向量化、生成缩略图
+    """
+    from app.db.session import SessionLocal
+    db = SessionLocal()
+    
+    try:
+        # 异步处理文档（提取文本、切片、向量化）
+        success, message, chunk_count = await document_service.process_document(
+            db, doc_id, filepath
+        )
+        
+        if success:
+            # 获取切片并添加到向量数据库
+            try:
+                text, _ = document_service.extract_text_from_pdf(filepath)
+                chunks = document_service.chunk_text(text)
+                vector_service.add_documents(doc_id, chunks)
+                print(f"✓ 文档 {doc_id} 处理完成，共 {chunk_count} 个切片")
+            except Exception as e:
+                # 向量化失败，更新状态
+                document_crud.update_document(
+                    db, doc_id,
+                    DocumentUpdate(error_message=f"向量化失败: {str(e)}")
+                )
+                print(f"⚠ 文档 {doc_id} 向量化失败: {e}")
+        else:
+            print(f"⚠ 文档 {doc_id} 处理失败: {message}")
+        
+        # 生成缩略图
+        await thumbnail_service.generate_thumbnail_async(doc_id, filepath)
+        
+    except Exception as e:
+        print(f"✗ 文档 {doc_id} 后台处理异常: {e}")
+        try:
+            document_crud.update_document(
+                db, doc_id,
+                DocumentUpdate(
+                    status="failed",
+                    error_message=f"处理失败: {str(e)}"
+                )
+            )
+        except Exception:
+            pass
+    finally:
+        db.close()
 
 
 @router.get(

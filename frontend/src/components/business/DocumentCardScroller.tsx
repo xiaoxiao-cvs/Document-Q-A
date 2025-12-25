@@ -1,19 +1,22 @@
 import { useRef, useState, useEffect, useCallback, ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { FileText, Clock, Layers, ChevronLeft, ChevronRight } from 'lucide-react'
+import { FileText, Clock, Layers, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Document } from '@/types'
 import { documentsApi } from '@/api'
 import { formatFileSize, formatDateTime } from '@/lib/utils'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 interface DocumentCardScrollerProps {
   documents: Document[]
   onDocumentClick: (documentId: string) => void
+  onDelete?: (documentId: string) => void
   uploadSlot?: ReactNode
 }
 
 export const DocumentCardScroller = ({
   documents,
   onDocumentClick,
+  onDelete,
   uploadSlot,
 }: DocumentCardScrollerProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -102,6 +105,7 @@ export const DocumentCardScroller = ({
             document={doc}
             index={index}
             onClick={() => onDocumentClick(doc.id)}
+            onDelete={onDelete}
           />
         ))}
       </div>
@@ -113,21 +117,45 @@ interface DocumentCardProps {
   document: Document
   index: number
   onClick: () => void
+  onDelete?: (documentId: string) => void
 }
 
-const DocumentCard = ({ document, index, onClick }: DocumentCardProps) => {
+const DocumentCard = ({ document, index, onClick, onDelete }: DocumentCardProps) => {
   const [thumbnailError, setThumbnailError] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const thumbnailUrl = documentsApi.getThumbnailUrl(document.id)
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowDeleteConfirm(true)
+  }
+
+  const confirmDelete = () => {
+    if (onDelete) {
+      onDelete(document.id)
+    }
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      onClick={onClick}
-      className="flex-shrink-0 w-56 cursor-pointer group/card"
-    >
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-400 hover:shadow-md transition-all duration-200">
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        onClick={onClick}
+        className="flex-shrink-0 w-56 cursor-pointer group/card"
+      >
+        <div className="relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-400 hover:shadow-md transition-all duration-200">
+          {/* 删除按钮 */}
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className="absolute top-2 right-2 z-20 p-1.5 rounded-full hover:bg-gray-200 transition-colors duration-200"
+              title="删除文档"
+            >
+              <X className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+            </button>
+          )}
         {/* 缩略图区域 */}
         <div className="relative h-32 bg-gray-100 overflow-hidden">
           {!thumbnailError ? (
@@ -171,5 +199,18 @@ const DocumentCard = ({ document, index, onClick }: DocumentCardProps) => {
         </div>
       </div>
     </motion.div>
+
+      {/* 删除确认对话框 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="删除文档"
+        message={`确定要删除文档 "${document.filename}" 吗？此操作无法撤销。`}
+        confirmText="删除"
+        cancelText="取消"
+        type="danger"
+      />
+    </>
   )
 }

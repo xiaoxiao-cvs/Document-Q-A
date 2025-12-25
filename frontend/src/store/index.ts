@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 import { Document, Message, Source, TokenUsage } from '@/types'
 
+export type ToastType = 'success' | 'error' | 'info' | 'warning'
+
+export interface ToastState {
+  isOpen: boolean
+  message: string
+  type: ToastType
+}
+
 export interface HighlightArea {
   page: number
   x0?: number
@@ -33,6 +41,9 @@ interface AppState {
   
   // Token Usage (累计)
   tokenUsage: TokenUsage
+  
+  // Toast
+  toast: ToastState
   
   // Actions
   setDocuments: (documents: Document[]) => void
@@ -67,6 +78,10 @@ interface AppState {
   // Token Usage Actions
   addTokenUsage: (usage: TokenUsage) => void
   resetTokenUsage: () => void
+  
+  // Toast Actions
+  showToast: (message: string, type?: ToastType) => void
+  hideToast: () => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -95,6 +110,13 @@ export const useAppStore = create<AppState>((set) => ({
     prompt_tokens: 0,
     completion_tokens: 0,
     total_tokens: 0,
+  },
+  
+  // Toast initial state
+  toast: {
+    isOpen: false,
+    message: '',
+    type: 'info',
   },
   
   // Documents actions
@@ -212,4 +234,13 @@ export const useAppStore = create<AppState>((set) => ({
   resetTokenUsage: () => set({
     tokenUsage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
   }),
+  
+  // Toast Actions
+  showToast: (message, type = 'info') => set({
+    toast: { isOpen: true, message, type },
+  }),
+  
+  hideToast: () => set((state) => ({
+    toast: { ...state.toast, isOpen: false },
+  })),
 }))

@@ -63,15 +63,19 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         {...getRootProps()}
         className={cn(
           'flex-shrink-0 w-56 cursor-pointer group/upload',
-          'bg-white rounded-xl border-2 border-dashed border-gray-300',
-          'hover:border-gray-400 hover:bg-gray-50 transition-all duration-200',
-          isDragActive && 'border-gray-500 bg-gray-100 border-solid',
+          'bg-white rounded-xl border-2 border-dashed transition-all duration-200',
+          isDragActive 
+            ? 'border-blue-500 bg-blue-50 border-solid shadow-lg scale-105' 
+            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50',
           uploading && 'opacity-50 cursor-not-allowed'
         )}
       >
         <input {...getInputProps()} disabled={uploading} />
         {/* 上半部分 - 图标区域，与缩略图高度一致 */}
-        <div className="h-32 flex flex-col items-center justify-center border-b border-gray-100">
+        <div className={cn(
+          "h-32 flex flex-col items-center justify-center border-b transition-colors",
+          isDragActive ? "border-blue-200 bg-blue-50" : "border-gray-100"
+        )}>
           {uploading ? (
             <>
               <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
@@ -80,7 +84,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               )}
             </>
           ) : isDragActive ? (
-            <Upload className="w-8 h-8 text-gray-600" />
+            <>
+              <Upload className="w-10 h-10 text-blue-500 animate-bounce" />
+              <p className="text-sm text-blue-600 font-medium mt-2">释放上传</p>
+            </>
           ) : (
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover/upload:bg-gray-200 transition-colors">
               <Plus className="w-6 h-6 text-gray-500" />
@@ -89,8 +96,11 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         </div>
         {/* 下半部分 - 文字区域，与文档信息区域一致 */}
         <div className="p-3">
-          <p className="text-sm text-gray-700 font-medium mb-1">
-            {uploading ? '上传中...' : isDragActive ? '释放上传' : '上传文档'}
+          <p className={cn(
+            "text-sm font-medium mb-1",
+            isDragActive ? "text-blue-600" : "text-gray-700"
+          )}>
+            {uploading ? '上传中...' : isDragActive ? '释放文件' : '上传文档'}
           </p>
           <p className="text-xs text-gray-400">点击或拖拽文件</p>
           <p className="text-xs text-gray-300 mt-1">PDF, TXT, DOCX</p>
