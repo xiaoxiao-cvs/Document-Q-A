@@ -37,7 +37,8 @@ async def lifespan(app: FastAPI):
     print(f" 正在启动 {settings.PROJECT_NAME}...")
     
     # 确保数据目录存在
-    os.makedirs("./data", exist_ok=True)
+    from app.core.config import DATA_DIR
+    os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
     

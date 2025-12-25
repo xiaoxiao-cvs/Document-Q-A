@@ -10,13 +10,13 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.core.config import settings
+from app.core.config import settings, DATA_DIR
 
 # 创建路由器
 router = APIRouter(prefix="/settings", tags=["设置管理"])
 
 # 配置文件路径
-CONFIG_FILE = "./data/llm_config.json"
+CONFIG_FILE = str(DATA_DIR / "llm_config.json")
 
 
 class LLMConfigRequest(BaseModel):

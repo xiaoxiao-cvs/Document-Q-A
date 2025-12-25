@@ -3,10 +3,16 @@
 
 用于管理应用程序的所有配置项，通过环境变量加载敏感信息。
 """
+import os
+from pathlib import Path
 from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
+
+# 获取backend目录的绝对路径
+BACKEND_DIR = Path(__file__).parent.parent.parent.resolve()
+DATA_DIR = BACKEND_DIR / "data"
 
 
 class Settings(BaseSettings):
@@ -27,7 +33,7 @@ class Settings(BaseSettings):
     
     # 数据库配置
     DATABASE_URL: str = Field(
-        default="sqlite:///./data/app.db", 
+        default=f"sqlite:///{DATA_DIR}/app.db", 
         description="SQLite 数据库连接URL"
     )
     
@@ -39,7 +45,7 @@ class Settings(BaseSettings):
     
     # 向量数据库配置
     CHROMA_PERSIST_DIRECTORY: str = Field(
-        default="./data/chroma", 
+        default=str(DATA_DIR / "chroma"), 
         description="ChromaDB 持久化目录"
     )
     CHROMA_COLLECTION_NAME: str = Field(
@@ -48,7 +54,7 @@ class Settings(BaseSettings):
     )
     
     # 文件上传配置
-    UPLOAD_DIR: str = Field(default="./data/uploads", description="文件上传目录")
+    UPLOAD_DIR: str = Field(default=str(DATA_DIR / "uploads"), description="文件上传目录")
     MAX_UPLOAD_SIZE: int = Field(default=10 * 1024 * 1024, description="最大上传文件大小(字节)")  # 10MB
     ALLOWED_EXTENSIONS: List[str] = Field(
         default=["pdf", "txt", "docx"], 
