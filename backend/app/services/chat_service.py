@@ -158,6 +158,15 @@ class ChatService:
         
         return messages
     
+    def _get_llm_config(self) -> dict:
+        """
+        获取有效的 LLM 配置
+        
+        优先级：文件配置 > 环境变量 > 默认值
+        """
+        from app.api.v1.endpoints.settings import get_effective_config
+        return get_effective_config()
+    
     async def _call_llm(self, messages: List[dict]) -> Tuple[str, Optional[TokenUsage]]:
         """
         调用 LLM API 获取回答
@@ -168,9 +177,15 @@ class ChatService:
         Returns:
             Tuple[str, Optional[TokenUsage]]: (回答内容, Token用量)
         """
+        # 获取动态配置
+        config = self._get_llm_config()
+        api_key = config.get("api_key")
+        api_base = config.get("api_base")
+        model = config.get("model", "gpt-3.5-turbo")
+        
         # 这里使用 OpenAI SDK 调用 LLM
         # 如果没有配置 API Key，返回模拟回答
-        if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "your_api_key_here":
+        if not api_key or api_key == "your_api_key_here":
             # 返回模拟回答，用于测试
             mock_response = self._generate_mock_response(messages)
             # 模拟 token 用量（粗略估算）
@@ -185,12 +200,12 @@ class ChatService:
             from openai import AsyncOpenAI
             
             client = AsyncOpenAI(
-                api_key=settings.OPENAI_API_KEY,
-                base_url=settings.OPENAI_API_BASE if settings.OPENAI_API_BASE else None
+                api_key=api_key,
+                base_url=api_base if api_base else None
             )
             
             response = await client.chat.completions.create(
-                model=settings.LLM_MODEL,
+                model=model,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=1000
@@ -220,7 +235,13 @@ class ChatService:
         Yields:
             Tuple[str, Optional[Dict]]: (回答片段, Token用量) - usage 只在最后一次 yield 中有值
         """
-        if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "your_api_key_here":
+        # 获取动态配置
+        config = self._get_llm_config()
+        api_key = config.get("api_key")
+        api_base = config.get("api_base")
+        model = config.get("model", "gpt-3.5-turbo")
+        
+        if not api_key or api_key == "your_api_key_here":
             # 返回模拟回答，用于测试
             mock_response = self._generate_mock_response(messages)
             for char in mock_response:
@@ -238,12 +259,12 @@ class ChatService:
             from openai import AsyncOpenAI
             
             client = AsyncOpenAI(
-                api_key=settings.OPENAI_API_KEY,
-                base_url=settings.OPENAI_API_BASE if settings.OPENAI_API_BASE else None
+                api_key=api_key,
+                base_url=api_base if api_base else None
             )
             
             stream = await client.chat.completions.create(
-                model=settings.LLM_MODEL,
+                model=model,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=1000,

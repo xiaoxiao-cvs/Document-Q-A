@@ -1,0 +1,3 @@
+# 此目录用于存放打包后的后端可执行文件
+# 文件命名格式: backend-<target-triple>[.exe]
+# 例如: backend-x86_64-pc-windows-msvc.exe

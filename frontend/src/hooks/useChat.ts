@@ -17,7 +17,6 @@ export const useChat = () => {
     setIsChatLoading,
     setIsStreaming,
     setStreamingContent,
-    appendStreamingContent,
     navigateToSource,
     addTokenUsage,
   } = useAppStore()

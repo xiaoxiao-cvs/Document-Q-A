@@ -15,3 +15,6 @@ openai>=1.0.0
 tiktoken>=0.5.0
 PyMuPDF>=1.23.0
 Pillow>=10.0.0
+
+# 打包依赖 (可选，仅用于构建桌面应用)
+pyinstaller>=6.0.0

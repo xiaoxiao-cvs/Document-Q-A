@@ -59,6 +59,49 @@ api.interceptors.response.use(
   }
 )
 
+// LLM 配置类型
+export interface LLMConfig {
+  api_base: string | null
+  api_key_set: boolean
+  api_key_preview: string | null
+  model: string
+  embedding_model: string
+}
+
+export interface LLMConfigUpdate {
+  api_base?: string | null
+  api_key?: string | null
+  model?: string | null
+  embedding_model?: string | null
+}
+
+export interface LLMTestResult {
+  success: boolean
+  message: string
+  model?: string
+}
+
+// Settings API
+export const settingsApi = {
+  // Get LLM config
+  getLLMConfig: async (): Promise<LLMConfig> => {
+    const response = await api.get('/v1/settings/llm')
+    return response.data
+  },
+
+  // Update LLM config
+  updateLLMConfig: async (config: LLMConfigUpdate): Promise<LLMConfig> => {
+    const response = await api.put('/v1/settings/llm', config)
+    return response.data
+  },
+
+  // Test LLM connection
+  testLLMConnection: async (): Promise<LLMTestResult> => {
+    const response = await api.post('/v1/settings/llm/test')
+    return response.data
+  },
+}
+
 // Documents API
 export const documentsApi = {
   // Get all documents

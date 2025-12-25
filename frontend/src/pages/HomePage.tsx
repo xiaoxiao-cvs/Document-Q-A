@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FileText, Brain, Search, MessageSquare, Sparkles } from 'lucide-react'
+import { FileText, Brain, Search, MessageSquare, Sparkles, Settings } from 'lucide-react'
 import { UploadZone } from '@/components/business/UploadZone'
 import { DocumentCardScroller } from '@/components/business/DocumentCardScroller'
+import { SettingsModal } from '@/components/business/SettingsModal'
 import { useDocuments } from '@/hooks/useDocuments'
 
 const features = [
@@ -31,6 +33,7 @@ const features = [
 export const HomePage = () => {
   const navigate = useNavigate()
   const { uploadFiles, isUploading, uploadProgress, documents } = useDocuments()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const handleUpload = async (files: File[]) => {
     await uploadFiles(files)
@@ -42,8 +45,23 @@ export const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Settings Modal */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      
       {/* Hero Section */}
       <div className="relative overflow-hidden">
+        {/* Settings Button - Fixed Position */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          onClick={() => setIsSettingsOpen(true)}
+          className="fixed top-4 right-4 z-30 p-2.5 rounded-xl bg-white border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-colors"
+          title="模型设置"
+        >
+          <Settings className="w-5 h-5 text-gray-600" />
+        </motion.button>
+        
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gray-100 rounded-full blur-3xl" />

@@ -69,7 +69,7 @@ interface AppState {
   resetTokenUsage: () => void
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set) => ({
   // Initial state
   documents: [],
   selectedDocumentIds: [],

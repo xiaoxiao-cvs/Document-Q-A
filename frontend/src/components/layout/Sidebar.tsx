@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { FileText, MessageSquare } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 
 interface SidebarProps {
   children: React.ReactNode

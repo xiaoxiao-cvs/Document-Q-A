@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Coins, FileText, GripVertical } from 'lucide-react'
+import { ArrowLeft, Coins, FileText, GripVertical, Settings } from 'lucide-react'
 import { Panel, Group, Separator } from 'react-resizable-panels'
 import { ChatArea } from '@/components/business/ChatArea'
 import { PDFViewer } from '@/components/business/PDFViewer'
+import { SettingsModal } from '@/components/business/SettingsModal'
 import { useChat } from '@/hooks/useChat'
 import { useAppStore } from '@/store'
 import { documentsApi } from '@/api'
@@ -12,6 +13,7 @@ import { documentsApi } from '@/api'
 export const DocumentChatPage = () => {
   const { documentId } = useParams<{ documentId: string }>()
   const navigate = useNavigate()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   
   const {
     messages,
@@ -112,8 +114,19 @@ export const DocumentChatPage = () => {
               )}
             </div>
           </div>
+          {/* Settings Button */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+            title="模型设置"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
         </div>
       </motion.div>
+
+      {/* Settings Modal */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       {/* Main Content - Split Panels */}
       <div className="flex-1 overflow-hidden">

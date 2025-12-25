@@ -9,6 +9,14 @@ interface ModalProps {
   title?: string
   children: React.ReactNode
   className?: string
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+}
+
+const sizeClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,6 +25,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   className,
+  size = 'lg',
 }) => {
   return (
     <AnimatePresence>
@@ -39,17 +48,18 @@ export const Modal: React.FC<ModalProps> = ({
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', duration: 0.3 }}
               className={cn(
-                'bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden',
+                'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-hidden',
+                sizeClasses[size],
                 className
               )}
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between p-6 border-b border-light-secondary">
-                  <h2 className="text-xl font-semibold text-dark">{title}</h2>
+                <div className="flex items-center justify-between p-6 border-b border-light-secondary dark:border-gray-700">
+                  <h2 className="text-xl font-semibold text-dark dark:text-white">{title}</h2>
                   <button
                     onClick={onClose}
-                    className="p-1 rounded-lg hover:bg-light-secondary transition-colors"
+                    className="p-1 rounded-lg hover:bg-light-secondary dark:hover:bg-gray-700 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>

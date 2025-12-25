@@ -5,7 +5,7 @@ API v1 路由汇总模块
 """
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import documents, chat
+from app.api.v1.endpoints import documents, chat, settings
 
 # 创建 v1 版本的主路由器
 api_router = APIRouter()
@@ -13,3 +13,4 @@ api_router = APIRouter()
 # 注册各个模块的路由
 api_router.include_router(documents.router)
 api_router.include_router(chat.router)
+api_router.include_router(settings.router)
