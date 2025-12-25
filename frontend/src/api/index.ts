@@ -110,6 +110,12 @@ export const documentsApi = {
     return response.data
   },
 
+  // Get a single document by ID
+  getById: async (documentId: string): Promise<Document> => {
+    const response = await api.get(`/v1/documents/${documentId}`)
+    return response.data
+  },
+
   // Upload a file
   upload: async (file: File, onProgress?: (progress: number) => void): Promise<UploadResponse> => {
     const formData = new FormData()

@@ -45,7 +45,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (input.trim() && !loading && !isStreaming) {
+    if (input.trim() && !loading && !isStreaming && hasDocuments) {
       onSendMessage(input.trim())
       setInput('')
       // Reset textarea height
@@ -180,8 +180,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         
         {/* 提示信息 */}
         {!hasDocuments && (
-          <p className="text-xs text-amber-600 mt-2 text-center">
-            ⚠️ 请先在左侧上传并选择至少一个文档
+          <p className="text-xs text-amber-600 mt-2 text-center flex items-center justify-center gap-1">
+            <span>⚠️</span>
+            <span>文档正在处理中，请稍后再试...</span>
           </p>
         )}
       </div>

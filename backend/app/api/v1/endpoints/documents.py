@@ -3,11 +3,10 @@
 
 提供文档上传、列表、删除等接口。
 """
-import asyncio
 import os
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
@@ -35,6 +34,7 @@ router = APIRouter(prefix="/documents", tags=["文档管理"])
     description="上传 PDF 文档，系统将自动解析并建立索引"
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(..., description="要上传的 PDF 文件"),
     db: Session = Depends(get_db)
 ) -> UploadResponse:
@@ -91,17 +91,17 @@ async def upload_document(
         message="文件上传成功，正在后台处理..."
     )
     
-    # 启动后台任务处理文档（异步，不阻塞响应）
-    asyncio.create_task(
-        process_document_background(db_document.id, filepath)
+    # 使用 BackgroundTasks 在后台处理文档（不阻塞响应）
+    background_tasks.add_task(
+        process_document_background, db_document.id, filepath
     )
     
     return response
 
 
-async def process_document_background(doc_id: int, filepath: str):
+def process_document_background(doc_id: int, filepath: str):
     """
-    后台异步处理文档
+    后台处理文档（在线程池中执行，避免阻塞事件循环）
     
     包括：文本提取、切片、向量化、生成缩略图
     """
@@ -109,30 +109,44 @@ async def process_document_background(doc_id: int, filepath: str):
     db = SessionLocal()
     
     try:
-        # 异步处理文档（提取文本、切片、向量化）
-        success, message, chunk_count = await document_service.process_document(
-            db, doc_id, filepath
+        # 更新状态为处理中
+        document_crud.update_document(
+            db, doc_id, 
+            DocumentUpdate(status="processing")
         )
         
-        if success:
-            # 获取切片并添加到向量数据库
-            try:
-                text, _ = document_service.extract_text_from_pdf(filepath)
-                chunks = document_service.chunk_text(text)
-                vector_service.add_documents(doc_id, chunks)
-                print(f"✓ 文档 {doc_id} 处理完成，共 {chunk_count} 个切片")
-            except Exception as e:
-                # 向量化失败，更新状态
-                document_crud.update_document(
-                    db, doc_id,
-                    DocumentUpdate(error_message=f"向量化失败: {str(e)}")
-                )
-                print(f"⚠ 文档 {doc_id} 向量化失败: {e}")
-        else:
-            print(f"⚠ 文档 {doc_id} 处理失败: {message}")
+        # 提取文本（同步操作，但在线程池中执行不会阻塞主线程）
+        text, page_count = document_service.extract_text(filepath)
         
-        # 生成缩略图
-        await thumbnail_service.generate_thumbnail_async(doc_id, filepath)
+        if not text.strip():
+            raise ValueError("无法从文档中提取文本内容")
+        
+        # 切分文本
+        chunks = document_service.chunk_text(text)
+        
+        if not chunks:
+            raise ValueError("文本切片失败，未生成任何切片")
+        
+        # 添加到向量数据库
+        try:
+            vector_service.add_documents(doc_id, chunks)
+            print(f"✓ 文档 {doc_id} 处理完成，共 {len(chunks)} 个切片")
+        except Exception as e:
+            # 向量化失败但继续
+            print(f"⚠ 文档 {doc_id} 向量化失败: {e}")
+        
+        # 更新文档状态为已处理
+        document_crud.update_document(
+            db, doc_id,
+            DocumentUpdate(status="processed", chunk_count=len(chunks))
+        )
+        
+        # 生成缩略图（同步操作）
+        try:
+            thumbnail_service.get_or_generate_thumbnail(doc_id, filepath)
+            print(f"✓ 文档 {doc_id} 缩略图生成成功")
+        except Exception as e:
+            print(f"⚠ 文档 {doc_id} 缩略图生成失败: {e}")
         
     except Exception as e:
         print(f"✗ 文档 {doc_id} 后台处理异常: {e}")
@@ -251,8 +265,10 @@ async def get_document(
     return DocumentListItem(
         id=db_document.id,
         filename=db_document.filename,
+        file_size=db_document.file_size,
         upload_time=db_document.upload_time,
-        status=db_document.status
+        status=db_document.status,
+        chunk_count=db_document.chunk_count
     )
 
 

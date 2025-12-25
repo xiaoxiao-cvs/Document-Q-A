@@ -28,7 +28,12 @@ export const useDocuments = () => {
   const fetchDocuments = useCallback(async () => {
     try {
       const docs = await documentsApi.getAll()
-      setDocuments(docs)
+      // 确保 ID 转换为字符串类型
+      const normalizedDocs = docs.map(doc => ({
+        ...doc,
+        id: String(doc.id)
+      }))
+      setDocuments(normalizedDocs)
     } catch (error) {
       console.error('Failed to fetch documents:', error)
       throw error

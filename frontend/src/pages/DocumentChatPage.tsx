@@ -7,6 +7,7 @@ import { ChatArea } from '@/components/business/ChatArea'
 import { PDFViewer } from '@/components/business/PDFViewer'
 import { SettingsModal } from '@/components/business/SettingsModal'
 import { useChat } from '@/hooks/useChat'
+import { useDocuments } from '@/hooks/useDocuments'
 import { useAppStore } from '@/store'
 import { documentsApi } from '@/api'
 
@@ -14,6 +15,7 @@ export const DocumentChatPage = () => {
   const { documentId } = useParams<{ documentId: string }>()
   const navigate = useNavigate()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const { fetchDocuments } = useDocuments()
   
   const {
     messages,
@@ -39,6 +41,61 @@ export const DocumentChatPage = () => {
 
   // 获取当前文档信息
   const currentDocument = documents.find(doc => doc.id === documentId)
+  
+  // 检查文档是否可用于提问
+  const isDocumentReady = currentDocument?.status === 'processed' && (currentDocument?.chunk_count || 0) > 0
+  
+  // 初始化：立即加载文档列表
+  useEffect(() => {
+    fetchDocuments()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // 轮询更新文档状态（如果文档正在处理中）
+  useEffect(() => {
+    if (!documentId) return
+    
+    // 如果找不到文档或文档还在处理中，定期刷新状态
+    const needsUpdate = !currentDocument || 
+      currentDocument.status === 'pending' || 
+      currentDocument.status === 'processing'
+    
+    if (needsUpdate) {
+      const interval = setInterval(async () => {
+        try {
+          // 刷新整个文档列表以获取最新状态
+          await fetchDocuments()
+          
+          // 检查是否处理完成
+          const updatedDocs = useAppStore.getState().documents
+          const updatedDoc = updatedDocs.find(doc => doc.id === documentId)
+          
+          if (updatedDoc && currentDocument) {
+            // 如果状态从处理中变为完成/失败，显示通知
+            const wasProcessing = currentDocument.status === 'pending' || currentDocument.status === 'processing'
+            const isNowComplete = updatedDoc.status === 'processed' || updatedDoc.status === 'failed'
+            
+            if (wasProcessing && isNowComplete) {
+              if (updatedDoc.status === 'processed') {
+                useAppStore.getState().showToast(
+                  `文档 "${updatedDoc.filename}" 处理完成，共生成 ${updatedDoc.chunk_count} 个片段`,
+                  'success'
+                )
+              } else {
+                useAppStore.getState().showToast(
+                  `文档 "${updatedDoc.filename}" 处理失败`,
+                  'error'
+                )
+              }
+            }
+          }
+        } catch (error) {
+          console.error('更新文档状态失败:', error)
+        }
+      }, 3000) // 每3秒刷新一次
+      
+      return () => clearInterval(interval)
+    }
+  }, [documentId, currentDocument?.status, fetchDocuments])
 
   // 初始化：设置当前文档ID和加载PDF
   useEffect(() => {
@@ -141,7 +198,7 @@ export const DocumentChatPage = () => {
                 onCancelStreaming={cancelStreaming}
                 loading={isChatLoading}
                 isStreaming={isStreaming}
-                hasDocuments={true}
+                hasDocuments={isDocumentReady}
               />
             </div>
           </Panel>

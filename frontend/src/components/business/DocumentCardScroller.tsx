@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback, ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { FileText, Clock, Layers, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { FileText, Clock, Layers, ChevronLeft, ChevronRight, X, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { Document } from '@/types'
 import { documentsApi } from '@/api'
 import { formatFileSize, formatDateTime } from '@/lib/utils'
@@ -170,14 +170,45 @@ const DocumentCard = ({ document, index, onClick, onDelete }: DocumentCardProps)
               <FileText className="w-12 h-12 text-gray-300" />
             </div>
           )}
-          {/* 悬浮遮罩 */}
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity">
-            <div className="absolute bottom-2 left-2 right-2">
-              <span className="text-xs text-white bg-gray-800/80 px-2 py-1 rounded">
-                点击开始提问
-              </span>
+          
+          {/* 状态标识 */}
+          {(document.status === 'pending' || document.status === 'processing') && (
+            <div className="absolute inset-0 bg-gray-900/50 flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 text-white animate-spin mx-auto mb-2" />
+                <span className="text-xs text-white">处理中...</span>
+              </div>
             </div>
-          </div>
+          )}
+          
+          {document.status === 'failed' && (
+            <div className="absolute inset-0 bg-red-500/80 flex items-center justify-center">
+              <div className="text-center">
+                <AlertCircle className="w-8 h-8 text-white mx-auto mb-2" />
+                <span className="text-xs text-white">处理失败</span>
+              </div>
+            </div>
+          )}
+          
+          {document.status === 'processed' && (document.chunk_count || 0) === 0 && (
+            <div className="absolute inset-0 bg-amber-500/80 flex items-center justify-center">
+              <div className="text-center">
+                <AlertCircle className="w-8 h-8 text-white mx-auto mb-2" />
+                <span className="text-xs text-white">无有效内容</span>
+              </div>
+            </div>
+          )}
+          
+          {/* 悬浮遮罩 */}
+          {document.status === 'processed' && (document.chunk_count || 0) > 0 && (
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity">
+              <div className="absolute bottom-2 left-2 right-2">
+                <span className="text-xs text-white bg-gray-800/80 px-2 py-1 rounded">
+                  点击开始提问
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 信息区域 */}

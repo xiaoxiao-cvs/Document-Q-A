@@ -33,6 +33,47 @@ export const useChat = () => {
       ? [currentDocumentId] 
       : (selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined)
 
+    // 检查文档状态
+    if (docIds && docIds.length > 0) {
+      const documents = useAppStore.getState().documents
+      const selectedDocs = documents.filter(doc => docIds.includes(doc.id))
+      
+      // 检查是否有文档正在处理中
+      const processingDocs = selectedDocs.filter(doc => 
+        doc.status === 'pending' || doc.status === 'processing'
+      )
+      
+      if (processingDocs.length > 0) {
+        useAppStore.getState().showToast(
+          '文档正在处理中，请稍后再试...',
+          'warning'
+        )
+        return
+      }
+      
+      // 检查是否有文档处理失败
+      const failedDocs = selectedDocs.filter(doc => doc.status === 'failed')
+      
+      if (failedDocs.length > 0) {
+        useAppStore.getState().showToast(
+          `文档 "${failedDocs[0].filename}" 处理失败，无法提问`,
+          'error'
+        )
+        return
+      }
+      
+      // 检查是否有文档没有切片
+      const emptyDocs = selectedDocs.filter(doc => !doc.chunk_count || doc.chunk_count === 0)
+      
+      if (emptyDocs.length > 0) {
+        useAppStore.getState().showToast(
+          '所选文档未生成有效内容，无法提问',
+          'warning'
+        )
+        return
+      }
+    }
+
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),

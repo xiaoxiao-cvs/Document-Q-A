@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FileText, Brain, Search, MessageSquare, Sparkles, Settings } from 'lucide-react'
@@ -34,9 +34,29 @@ const features = [
 
 export const HomePage = () => {
   const navigate = useNavigate()
-  const { uploadFiles, isUploading, uploadProgress, documents, deleteDocument } = useDocuments()
+  const { uploadFiles, isUploading, uploadProgress, documents, deleteDocument, fetchDocuments } = useDocuments()
   const { toast, hideToast, showToast } = useAppStore()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  // 初始化：加载文档列表
+  useEffect(() => {
+    fetchDocuments()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 轮询更新文档状态（如果有文档正在处理中）
+  useEffect(() => {
+    const processingDocs = documents.filter(doc => 
+      doc.status === 'pending' || doc.status === 'processing'
+    )
+    
+    if (processingDocs.length > 0) {
+      const interval = setInterval(() => {
+        fetchDocuments()
+      }, 3000) // 每3秒刷新一次
+      
+      return () => clearInterval(interval)
+    }
+  }, [documents, fetchDocuments])
 
   const handleUpload = async (files: File[]) => {
     await uploadFiles(files)
